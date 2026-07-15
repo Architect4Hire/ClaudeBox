@@ -1,0 +1,23 @@
+<nav class="category-filter" aria-label="Filter recipes by category">
+  <button
+    type="button"
+    class="chip"
+    [class.chip--active]="selected() === null"
+    [attr.aria-pressed]="selected() === null"
+    (click)="select(null)"
+  >
+    All
+  </button>
+
+  @for (category of categories(); track category) {
+    <button
+      type="button"
+      class="chip"
+      [class.chip--active]="selected() === category"
+      [attr.aria-pressed]="selected() === category"
+      (click)="select(category)"
+    >
+      {{ category }}
+    </button>
+  }
+</nav>

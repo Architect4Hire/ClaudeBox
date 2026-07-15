@@ -1,0 +1,64 @@
+<form class="recipe-form" [formGroup]="form" (ngSubmit)="submit()">
+  <h1>{{ isEdit() ? 'Edit recipe' : 'New recipe' }}</h1>
+
+  @if (errorMessage(); as message) {
+    <p class="error" role="alert">{{ message }}</p>
+  }
+
+  <label class="field">
+    <span>Name</span>
+    <input type="text" formControlName="name" />
+    @if (form.controls.name.touched && form.controls.name.invalid) {
+      <small class="field__error">A name is required (max 200 characters).</small>
+    }
+  </label>
+
+  <label class="field">
+    <span>Description</span>
+    <textarea formControlName="description" rows="3"></textarea>
+  </label>
+
+  <label class="field field--narrow">
+    <span>Servings</span>
+    <input type="number" formControlName="servings" min="1" />
+    @if (form.controls.servings.touched && form.controls.servings.invalid) {
+      <small class="field__error">Servings must be at least 1.</small>
+    }
+  </label>
+
+  <fieldset class="group" formArrayName="ingredients">
+    <legend>Ingredients</legend>
+    @for (ingredient of ingredients.controls; track ingredient; let i = $index) {
+      <div class="row" [formGroupName]="i">
+        <input class="row__grow" type="text" placeholder="Name" formControlName="name" />
+        <input class="row__qty" type="number" placeholder="Qty" formControlName="quantity" min="0" />
+        <input class="row__unit" type="text" placeholder="Unit" formControlName="unit" />
+        <button type="button" class="row__remove" (click)="removeIngredient(i)" [disabled]="ingredients.length === 1">
+          Remove
+        </button>
+      </div>
+    }
+    <button type="button" class="add" (click)="addIngredient()">Add ingredient</button>
+  </fieldset>
+
+  <fieldset class="group" formArrayName="steps">
+    <legend>Steps</legend>
+    @for (step of steps.controls; track step; let i = $index) {
+      <div class="row" [formGroupName]="i">
+        <span class="row__order">{{ i + 1 }}.</span>
+        <input class="row__grow" type="text" placeholder="Instruction" formControlName="instruction" />
+        <button type="button" class="row__remove" (click)="removeStep(i)" [disabled]="steps.length === 1">
+          Remove
+        </button>
+      </div>
+    }
+    <button type="button" class="add" (click)="addStep()">Add step</button>
+  </fieldset>
+
+  <div class="actions">
+    <button type="submit" class="save" [disabled]="submitting() || loadFailed()">
+      {{ submitting() ? 'Saving…' : isEdit() ? 'Save changes' : 'Create recipe' }}
+    </button>
+    <a class="cancel" routerLink="/">Cancel</a>
+  </div>
+</form>

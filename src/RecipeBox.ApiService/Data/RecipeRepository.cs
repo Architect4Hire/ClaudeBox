@@ -64,6 +64,11 @@ public class RecipeRepository(RecipeDbContext db) : IRecipeRepository
     public Task<bool> ExistsByNameAsync(string name, CancellationToken ct) =>
         _db.Recipes.AnyAsync(r => r.Name.ToLower() == name.ToLower(), ct);
 
+    // Same sargable LOWER(Name) lookup as ExistsByNameAsync, but ignores the row being edited so a
+    // recipe keeping its own name doesn't collide with itself.
+    public Task<bool> ExistsWithNameExceptAsync(string name, int excludingId, CancellationToken ct) =>
+        _db.Recipes.AnyAsync(r => r.Id != excludingId && r.Name.ToLower() == name.ToLower(), ct);
+
     public async Task<Recipe> AddAsync(Recipe recipe, CancellationToken ct)
     {
         _db.Recipes.Add(recipe);
@@ -85,5 +90,63 @@ public class RecipeRepository(RecipeDbContext db) : IRecipeRepository
         }
 
         return recipe;
+    }
+
+    public async Task<Recipe?> UpdateAsync(int id, Recipe incoming, CancellationToken ct)
+    {
+        // Load the recipe tracked, with the two owned collections we replace. Categories/tags are left
+        // as-is, so they are deliberately not included here.
+        var existing = await _db.Recipes
+            .Include(r => r.Ingredients)
+            .Include(r => r.Steps)
+            .FirstOrDefaultAsync(r => r.Id == id, ct);
+
+        if (existing is null)
+        {
+            return null;
+        }
+
+        existing.Name = incoming.Name;
+        existing.Description = incoming.Description;
+        existing.Servings = incoming.Servings;
+
+        // Replace the owned children wholesale. Clearing the tracked collections orphans the old rows;
+        // the required Recipe FK + cascade means EF deletes them, then inserts the incoming set. Deletes
+        // are ordered before inserts in the same SaveChanges, so the (RecipeId, Order) unique index is
+        // never transiently violated when steps are renumbered.
+        existing.Ingredients.Clear();
+        foreach (var ingredient in incoming.Ingredients)
+        {
+            existing.Ingredients.Add(new Ingredient
+            {
+                Name = ingredient.Name,
+                Quantity = ingredient.Quantity,
+                Unit = ingredient.Unit,
+            });
+        }
+
+        existing.Steps.Clear();
+        foreach (var step in incoming.Steps)
+        {
+            existing.Steps.Add(new Step { Order = step.Order, Instruction = step.Instruction });
+        }
+
+        try
+        {
+            await _db.SaveChangesAsync(ct);
+        }
+        catch (DbUpdateException ex)
+            when (ex.InnerException is PostgresException
+                  {
+                      SqlState: PostgresErrorCodes.UniqueViolation,
+                      ConstraintName: RecipeNameUniqueIndex
+                  })
+        {
+            // Same backstop as AddAsync: a concurrent rename can slip past the business-layer check, so
+            // translate the unique-index violation to the domain exception (still surfaces as 409).
+            throw new RecipeNameConflictException(incoming.Name);
+        }
+
+        return existing;
     }
 }

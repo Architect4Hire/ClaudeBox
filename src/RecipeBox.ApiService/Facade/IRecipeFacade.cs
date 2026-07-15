@@ -20,4 +20,12 @@ public interface IRecipeFacade
     /// invalid input and <see cref="Models.Domain.RecipeNameConflictException"/> when the name is taken.
     /// </summary>
     Task<RecipeDetailServiceModel> CreateAsync(CreateRecipeViewModel viewModel, CancellationToken ct);
+
+    /// <summary>
+    /// Validates and updates the recipe with the given id. Throws
+    /// <see cref="FluentValidation.ValidationException"/> on invalid input and
+    /// <see cref="Models.Domain.RecipeNameConflictException"/> when another recipe owns the name.
+    /// Returns <c>null</c> when no recipe has that id (the controller turns that into a 404).
+    /// </summary>
+    Task<RecipeDetailServiceModel?> UpdateAsync(int id, UpdateRecipeViewModel viewModel, CancellationToken ct);
 }

@@ -40,4 +40,13 @@ public class RecipesController(IRecipeFacade facade) : ControllerBase
         var created = await _facade.CreateAsync(viewModel, ct);
         return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
     }
+
+    /// <summary>Replaces an existing recipe's header, ingredients, and ordered steps.</summary>
+    [HttpPut("{id:int}")]
+    public async Task<ActionResult<RecipeDetailServiceModel>> Update(
+        int id, [FromBody] UpdateRecipeViewModel viewModel, CancellationToken ct)
+    {
+        var updated = await _facade.UpdateAsync(id, viewModel, ct);
+        return updated is null ? NotFound() : Ok(updated);
+    }
 }

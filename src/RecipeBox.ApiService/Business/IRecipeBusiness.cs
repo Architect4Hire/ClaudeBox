@@ -20,4 +20,12 @@ public interface IRecipeBusiness
     /// when the name is already taken.
     /// </summary>
     Task<RecipeDetailServiceModel> CreateAsync(CreateRecipeViewModel viewModel, CancellationToken ct);
+
+    /// <summary>
+    /// Translates the view model onto the existing recipe with the given id and persists it. Enforces
+    /// the unique-name rule against <em>other</em> recipes, throwing
+    /// <see cref="Models.Domain.RecipeNameConflictException"/> when another recipe already owns the
+    /// name. Returns <c>null</c> when no recipe has that id (the controller turns that into a 404).
+    /// </summary>
+    Task<RecipeDetailServiceModel?> UpdateAsync(int id, UpdateRecipeViewModel viewModel, CancellationToken ct);
 }

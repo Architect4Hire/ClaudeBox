@@ -43,4 +43,21 @@ public class RecipeBusiness(IRecipeRepository repository) : IRecipeBusiness
         var created = await _repository.AddAsync(recipe, ct);
         return created.ToServiceModel();
     }
+
+    public async Task<RecipeDetailServiceModel?> UpdateAsync(int id, UpdateRecipeViewModel viewModel, CancellationToken ct)
+    {
+        // Translate the validated view model into a detached carrier of the edited values.
+        var incoming = viewModel.ToEntity();
+
+        // Data-dependent rule: the name must be unique among *other* recipes (a recipe may keep its own
+        // name). As with create, the DB's unique index is the real backstop against a concurrent rename;
+        // the repository translates that violation to the same RecipeNameConflictException.
+        if (await _repository.ExistsWithNameExceptAsync(incoming.Name, id, ct))
+        {
+            throw new RecipeNameConflictException(incoming.Name);
+        }
+
+        var updated = await _repository.UpdateAsync(id, incoming, ct);
+        return updated?.ToServiceModel();
+    }
 }

@@ -1,6 +1,6 @@
 ---
 paths:
-  - src/client/**
+  - src/RecipeBox/**
 ---
 # Frontend rules — Angular + TypeScript (Aspire)
 

@@ -15,11 +15,13 @@ namespace RecipeBox.ApiService.Facade;
 /// </summary>
 public class RecipeFacade(
     IRecipeBusiness business,
-    IValidator<CreateRecipeViewModel> validator,
+    IValidator<CreateRecipeViewModel> createValidator,
+    IValidator<UpdateRecipeViewModel> updateValidator,
     IDistributedCache cache) : IRecipeFacade
 {
     private readonly IRecipeBusiness _business = business;
-    private readonly IValidator<CreateRecipeViewModel> _validator = validator;
+    private readonly IValidator<CreateRecipeViewModel> _createValidator = createValidator;
+    private readonly IValidator<UpdateRecipeViewModel> _updateValidator = updateValidator;
     private readonly IDistributedCache _cache = cache;
 
     // The unfiltered list is the only cached list: a newly created recipe carries no categories yet
@@ -75,7 +77,7 @@ public class RecipeFacade(
 
     public async Task<RecipeDetailServiceModel> CreateAsync(CreateRecipeViewModel viewModel, CancellationToken ct)
     {
-        await _validator.ValidateAndThrowAsync(viewModel, ct);
+        await _createValidator.ValidateAndThrowAsync(viewModel, ct);
 
         var created = await _business.CreateAsync(viewModel, ct);
 
@@ -85,10 +87,42 @@ public class RecipeFacade(
         return created;
     }
 
+    public async Task<RecipeDetailServiceModel?> UpdateAsync(int id, UpdateRecipeViewModel viewModel, CancellationToken ct)
+    {
+        await _updateValidator.ValidateAndThrowAsync(viewModel, ct);
+
+        var updated = await _business.UpdateAsync(id, viewModel, ct);
+        if (updated is null)
+        {
+            return null;
+        }
+
+        // The edit can change fields shown in the unfiltered list (name, servings, description) and
+        // certainly changes this recipe's detail, so drop both cached copies.
+        await _cache.RemoveAsync(DetailKey(id), ct);
+        await _cache.RemoveAsync(ListAllKey, ct);
+
+        return updated;
+    }
+
     private async Task<T?> GetCachedAsync<T>(string key, CancellationToken ct)
     {
         var json = await _cache.GetStringAsync(key, ct);
-        return json is null ? default : JsonSerializer.Deserialize<T>(json);
+        if (json is null)
+        {
+            return default;
+        }
+
+        try
+        {
+            return JsonSerializer.Deserialize<T>(json);
+        }
+        catch (JsonException)
+        {
+            // A corrupt or version-incompatible cached payload must not fail the request. Treat it as
+            // a miss so the caller falls through to the business layer (and overwrites the bad entry).
+            return default;
+        }
     }
 
     private Task SetCachedAsync<T>(string key, T value, CancellationToken ct) =>

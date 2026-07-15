@@ -23,6 +23,19 @@ public interface IRecipeRepository
     /// <summary>True if a recipe with the given name already exists (case-insensitive).</summary>
     Task<bool> ExistsByNameAsync(string name, CancellationToken ct);
 
+    /// <summary>
+    /// True if a recipe <em>other than</em> <paramref name="excludingId"/> already uses the given name
+    /// (case-insensitive) — the uniqueness check for an update, which must not flag the row being edited.
+    /// </summary>
+    Task<bool> ExistsWithNameExceptAsync(string name, int excludingId, CancellationToken ct);
+
     /// <summary>Persists a new recipe (with its owned ingredients and steps) and returns it with its id.</summary>
     Task<Recipe> AddAsync(Recipe recipe, CancellationToken ct);
+
+    /// <summary>
+    /// Replaces the editable content (header, ingredients, ordered steps) of the recipe with the given
+    /// id from <paramref name="incoming"/>, and returns the persisted entity. Taxonomy is left
+    /// untouched. Returns <c>null</c> when no recipe has that id.
+    /// </summary>
+    Task<Recipe?> UpdateAsync(int id, Recipe incoming, CancellationToken ct);
 }

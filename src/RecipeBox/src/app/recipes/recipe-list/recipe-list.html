@@ -1,0 +1,47 @@
+<header class="list-header">
+  <h1>Recipes</h1>
+  <a class="new-button" routerLink="/recipes/new">New recipe</a>
+</header>
+
+@if (categories$ | async; as categories) {
+  @if (categories.length) {
+    <app-category-filter
+      [categories]="categories"
+      [selected]="selected$ | async"
+      (selectedChange)="onCategorySelected($event)"
+    />
+  }
+}
+
+@if (recipes$ | async; as recipes) {
+  @if (recipes.length) {
+    <ul class="card-grid">
+      @for (recipe of recipes; track recipe.id) {
+        <li>
+          <a class="card" [routerLink]="['/recipes', recipe.id]">
+            <h2 class="card__title">{{ recipe.name }}</h2>
+            @if (recipe.description) {
+              <p class="card__description">{{ recipe.description }}</p>
+            }
+            <dl class="card__meta">
+              <div><dt>Serves</dt><dd>{{ recipe.servings }}</dd></div>
+              <div><dt>Ingredients</dt><dd>{{ recipe.ingredientCount }}</dd></div>
+              <div><dt>Steps</dt><dd>{{ recipe.stepCount }}</dd></div>
+            </dl>
+            @if (recipe.categories.length) {
+              <ul class="card__tags">
+                @for (category of recipe.categories; track category) {
+                  <li>{{ category }}</li>
+                }
+              </ul>
+            }
+          </a>
+        </li>
+      }
+    </ul>
+  } @else {
+    <p class="empty">No recipes yet. Create the first one.</p>
+  }
+} @else {
+  <p class="empty">Loading recipes…</p>
+}

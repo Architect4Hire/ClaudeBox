@@ -131,6 +131,26 @@ public class RecipeRepositoryTests : IDisposable
     }
 
     [Fact]
+    public async Task ExistsWithNameExceptAsync_ignores_the_excluded_recipe()
+    {
+        int breadId;
+        await using (var context = NewContext())
+        {
+            var bread = Recipe("Bread", "Baking", 1, 1);
+            var soup = Recipe("Soup", "Mains", 1, 1);
+            context.Recipes.AddRange(bread, soup);
+            await context.SaveChangesAsync();
+            breadId = bread.Id;
+        }
+        var sut = new RecipeRepository(NewContext());
+
+        // "Bread" keeping its own name is not a conflict...
+        Assert.False(await sut.ExistsWithNameExceptAsync("bread", breadId, CancellationToken.None));
+        // ...but taking another recipe's name is (case-insensitively).
+        Assert.True(await sut.ExistsWithNameExceptAsync("SOUP", breadId, CancellationToken.None));
+    }
+
+    [Fact]
     public async Task AddAsync_persists_recipe_and_assigns_id()
     {
         var sut = new RecipeRepository(NewContext());
@@ -144,6 +164,123 @@ public class RecipeRepositoryTests : IDisposable
             .Include(r => r.Steps)
             .FirstAsync(r => r.Id == saved.Id);
         Assert.Equal(2, reloaded.Steps.Count);
+    }
+
+    [Fact]
+    public async Task UpdateAsync_overwrites_scalars_and_replaces_ingredients_and_steps()
+    {
+        int id;
+        await using (var context = NewContext())
+        {
+            var recipe = Recipe("Bread", "Baking", ingredients: 3, steps: 3);
+            context.Recipes.Add(recipe);
+            await context.SaveChangesAsync();
+            id = recipe.Id;
+        }
+        var sut = new RecipeRepository(NewContext());
+
+        var incoming = new Recipe
+        {
+            Name = "Sourdough",
+            Description = "Tangy",
+            Servings = 8,
+            Ingredients = { new Ingredient { Name = "Starter", Quantity = 1, Unit = "cup" } },
+            Steps =
+            {
+                new Step { Order = 1, Instruction = "Feed" },
+                new Step { Order = 2, Instruction = "Bake" },
+            },
+        };
+
+        var updated = await sut.UpdateAsync(id, incoming, CancellationToken.None);
+
+        Assert.NotNull(updated);
+        Assert.Equal("Sourdough", updated!.Name);
+
+        await using var verify = NewContext();
+        var reloaded = await verify.Recipes
+            .Include(r => r.Ingredients)
+            .Include(r => r.Steps)
+            .FirstAsync(r => r.Id == id);
+        Assert.Equal("Sourdough", reloaded.Name);
+        Assert.Equal("Tangy", reloaded.Description);
+        Assert.Equal(8, reloaded.Servings);
+        // Children were replaced wholesale, not appended.
+        Assert.Equal("Starter", Assert.Single(reloaded.Ingredients).Name);
+        Assert.Equal(new[] { 1, 2 }, reloaded.Steps.OrderBy(s => s.Order).Select(s => s.Order).ToArray());
+    }
+
+    [Fact]
+    public async Task UpdateAsync_returns_null_when_missing()
+    {
+        var sut = new RecipeRepository(NewContext());
+        var incoming = new Recipe
+        {
+            Name = "Nope",
+            Servings = 1,
+            Ingredients = { new Ingredient { Name = "Air", Quantity = 1 } },
+            Steps = { new Step { Order = 1, Instruction = "Nothing" } },
+        };
+
+        var result = await sut.UpdateAsync(999, incoming, CancellationToken.None);
+
+        Assert.Null(result);
+    }
+
+    [Fact]
+    public async Task UpdateAsync_leaves_categories_and_tags_untouched()
+    {
+        // UpdateAsync deliberately does not Include categories/tags — it replaces only scalars +
+        // ingredients + steps. This guards that documented invariant: an edit must not clear taxonomy.
+        int id;
+        await using (var context = NewContext())
+        {
+            var recipe = new Recipe
+            {
+                Name = "Bread",
+                Servings = 4,
+                Categories = { new Category { Name = "Baking" } },
+                Tags = { new Tag { Name = "Rustic" } },
+                Ingredients = { new Ingredient { Name = "Flour", Quantity = 3 } },
+                Steps = { new Step { Order = 1, Instruction = "Mix" } },
+            };
+            context.Recipes.Add(recipe);
+            await context.SaveChangesAsync();
+            id = recipe.Id;
+        }
+        var sut = new RecipeRepository(NewContext());
+
+        var incoming = new Recipe
+        {
+            Name = "Sourdough",
+            Servings = 8,
+            Ingredients = { new Ingredient { Name = "Starter", Quantity = 1, Unit = "cup" } },
+            Steps = { new Step { Order = 1, Instruction = "Feed" } },
+        };
+
+        await sut.UpdateAsync(id, incoming, CancellationToken.None);
+
+        await using var verify = NewContext();
+        var reloaded = await verify.Recipes
+            .Include(r => r.Categories)
+            .Include(r => r.Tags)
+            .FirstAsync(r => r.Id == id);
+        Assert.Equal("Sourdough", reloaded.Name);
+        Assert.Equal("Baking", Assert.Single(reloaded.Categories).Name);
+        Assert.Equal("Rustic", Assert.Single(reloaded.Tags).Name);
+    }
+
+    [Fact]
+    public async Task ListAsync_with_unmatched_category_returns_empty()
+    {
+        await SeedAsync(
+            Recipe("Soup", "Mains", 2, 3),
+            Recipe("Bread", "Baking", 5, 4));
+        var sut = new RecipeRepository(NewContext());
+
+        var result = await sut.ListAsync("NoSuchCategory", CancellationToken.None);
+
+        Assert.Empty(result);
     }
 
     public void Dispose() => _connection.Dispose();

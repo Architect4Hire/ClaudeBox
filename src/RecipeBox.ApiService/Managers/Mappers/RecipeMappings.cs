@@ -31,6 +31,22 @@ public static class RecipeMappings
                 .ToList(),
         };
 
+    // A detached carrier for the edited values: the repository reconciles these onto the tracked
+    // entity (scalar overwrite + child-collection replace), so no Id or taxonomy is set here.
+    public static Recipe ToEntity(this UpdateRecipeViewModel viewModel) =>
+        new()
+        {
+            Name = viewModel.Name,
+            Description = viewModel.Description,
+            Servings = viewModel.Servings,
+            Ingredients = viewModel.Ingredients
+                .Select(i => new Ingredient { Name = i.Name, Quantity = i.Quantity, Unit = i.Unit })
+                .ToList(),
+            Steps = viewModel.Steps
+                .Select(s => new Step { Order = s.Order, Instruction = s.Instruction })
+                .ToList(),
+        };
+
     // ── domain → service model (business layer) ──────────────────────────────────────────────────
 
     public static RecipeDetailServiceModel ToServiceModel(this Recipe recipe) =>

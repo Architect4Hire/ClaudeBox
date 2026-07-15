@@ -11,7 +11,7 @@ description: >
 Work in `src/client/`.
 
 1. **Generate.** `ng generate component <feature>/<name>` — standalone, kebab-case files.
-2. **Types.** Define/reuse a model interface that mirrors the backend DTO exactly. No `any`.
+2. **Types.** Define/reuse a model interface that mirrors the backend ServiceModels exactly. No `any`.
 3. **Data access.** Never call the API from the component. Use (or create) a typed service on
    `HttpClient`; read the API base URL from Aspire-injected config, not a hardcoded value.
 4. **Template.** Render async data with the `async` pipe. If you must subscribe, clean up with
@@ -25,7 +25,7 @@ separate where it helps testability.
 
 ## Checklist before done
 - [ ] Standalone component, kebab-case filenames
-- [ ] Model interface mirrors the backend DTO
+- [ ] Model interface mirrors the backend ServiceModels
 - [ ] API access through a typed service; base URL from injected config
 - [ ] `async` pipe used (or subscriptions cleaned up)
 - [ ] Tests pass (`ng test`)

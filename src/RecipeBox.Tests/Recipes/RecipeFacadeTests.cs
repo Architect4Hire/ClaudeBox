@@ -22,12 +22,14 @@ public class RecipeFacadeTests
     private const string ListAllKey = "recipes:list:all";
 
     private readonly IRecipeBusiness _business = Substitute.For<IRecipeBusiness>();
-    private readonly IValidator<CreateRecipeViewModel> _validator = new CreateRecipeViewModelValidator();
+    private readonly IValidator<CreateRecipeViewModel> _createValidator = new CreateRecipeViewModelValidator();
+    private readonly IValidator<UpdateRecipeViewModel> _updateValidator = new UpdateRecipeViewModelValidator();
     private readonly IDistributedCache _cache =
         new MemoryDistributedCache(Options.Create(new MemoryDistributedCacheOptions()));
     private readonly RecipeFacade _sut;
 
-    public RecipeFacadeTests() => _sut = new RecipeFacade(_business, _validator, _cache);
+    public RecipeFacadeTests() =>
+        _sut = new RecipeFacade(_business, _createValidator, _updateValidator, _cache);
 
     private static CreateRecipeViewModel ValidViewModel(string name) => new(
         Name: name,
@@ -35,6 +37,19 @@ public class RecipeFacadeTests
         Servings: 4,
         Ingredients: new List<CreateIngredientViewModel> { new("Flour", 2, "cups") },
         Steps: new List<CreateStepViewModel> { new(1, "Mix"), new(2, "Cook") });
+
+    private static UpdateRecipeViewModel ValidUpdateViewModel(string name) => new(
+        Name: name,
+        Description: "Reworked",
+        Servings: 6,
+        Ingredients: new List<UpdateIngredientViewModel> { new("Rye", 3, "cups") },
+        Steps: new List<UpdateStepViewModel> { new(1, "Knead"), new(2, "Bake") });
+
+    private static RecipeDetailServiceModel DetailModel(int id, string name) => new(
+        id, name, "Reworked", 6,
+        new List<IngredientServiceModel> { new("Rye", 3, "cups") },
+        new List<StepServiceModel> { new(1, "Knead"), new(2, "Bake") },
+        new List<string>(), new List<string>());
 
     [Fact]
     public async Task ListAsync_returns_cached_result_without_calling_business_on_hit()
@@ -148,5 +163,91 @@ public class RecipeFacadeTests
         Assert.Equal(2, result.Steps.Count);
         Assert.Equal(1, result.Steps[0].Order);
         Assert.Null(await _cache.GetStringAsync(ListAllKey));
+    }
+
+    [Fact]
+    public async Task UpdateAsync_throws_validation_and_never_calls_business()
+    {
+        var invalid = new UpdateRecipeViewModel(
+            Name: "",
+            Description: null,
+            Servings: 0,
+            Ingredients: new List<UpdateIngredientViewModel>(),
+            Steps: new List<UpdateStepViewModel>());
+
+        await Assert.ThrowsAsync<ValidationException>(
+            () => _sut.UpdateAsync(5, invalid, CancellationToken.None));
+
+        await _business.DidNotReceive().UpdateAsync(
+            Arg.Any<int>(), Arg.Any<UpdateRecipeViewModel>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task UpdateAsync_returns_business_result_and_invalidates_detail_and_list_caches()
+    {
+        // Prime both caches so we can prove each is invalidated by a successful update.
+        await _cache.SetStringAsync(ListAllKey, JsonSerializer.Serialize(new List<RecipeSummaryServiceModel>()));
+        await _cache.SetStringAsync("recipe:5", JsonSerializer.Serialize(DetailModel(5, "Old")));
+
+        _business.UpdateAsync(5, Arg.Any<UpdateRecipeViewModel>(), Arg.Any<CancellationToken>())
+            .Returns(DetailModel(5, "Rye Loaf"));
+
+        var result = await _sut.UpdateAsync(5, ValidUpdateViewModel("Rye Loaf"), CancellationToken.None);
+
+        Assert.NotNull(result);
+        Assert.Equal("Rye Loaf", result!.Name);
+        Assert.Null(await _cache.GetStringAsync("recipe:5"));
+        Assert.Null(await _cache.GetStringAsync(ListAllKey));
+    }
+
+    [Fact]
+    public async Task UpdateAsync_returns_null_and_leaves_caches_intact_when_missing()
+    {
+        await _cache.SetStringAsync(ListAllKey, JsonSerializer.Serialize(new List<RecipeSummaryServiceModel>()));
+        _business.UpdateAsync(999, Arg.Any<UpdateRecipeViewModel>(), Arg.Any<CancellationToken>())
+            .Returns((RecipeDetailServiceModel?)null);
+
+        var result = await _sut.UpdateAsync(999, ValidUpdateViewModel("Ghost"), CancellationToken.None);
+
+        Assert.Null(result);
+        // A no-op update must not blow away the cached list.
+        Assert.NotNull(await _cache.GetStringAsync(ListAllKey));
+    }
+
+    [Fact]
+    public async Task ListAsync_with_whitespace_category_uses_cached_unfiltered_path()
+    {
+        _business.ListAsync(null, Arg.Any<CancellationToken>()).Returns(new List<RecipeSummaryServiceModel>
+        {
+            new(1, "FromDb", null, 4, new[] { "Main" }, 2, 3),
+        });
+
+        var result = await _sut.ListAsync("   ", CancellationToken.None);
+
+        Assert.Equal("FromDb", result[0].Name);
+        // Whitespace is "no filter": the business layer is queried with null and the result is cached,
+        // never queried with the raw whitespace string.
+        await _business.Received(1).ListAsync(null, Arg.Any<CancellationToken>());
+        await _business.DidNotReceive().ListAsync("   ", Arg.Any<CancellationToken>());
+        Assert.NotNull(await _cache.GetStringAsync(ListAllKey));
+    }
+
+    [Fact]
+    public async Task ListAsync_falls_back_to_business_when_cached_payload_is_corrupt()
+    {
+        const string corrupt = "{ this is not valid json";
+        await _cache.SetStringAsync(ListAllKey, corrupt);
+        _business.ListAsync(null, Arg.Any<CancellationToken>()).Returns(new List<RecipeSummaryServiceModel>
+        {
+            new(5, "FromDb", null, 4, new[] { "Main" }, 2, 3),
+        });
+
+        var result = await _sut.ListAsync(null, CancellationToken.None);
+
+        // A corrupt cache entry must not throw: it is treated as a miss and served from the business
+        // layer, which then overwrites the bad entry.
+        Assert.Equal("FromDb", Assert.Single(result).Name);
+        await _business.Received(1).ListAsync(null, Arg.Any<CancellationToken>());
+        Assert.NotEqual(corrupt, await _cache.GetStringAsync(ListAllKey));
     }
 }

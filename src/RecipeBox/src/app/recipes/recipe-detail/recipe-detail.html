@@ -1,0 +1,51 @@
+@if (state$ | async; as state) {
+  @switch (state.status) {
+    @case ('loaded') {
+      <article class="recipe">
+        <header class="recipe__header">
+          <a class="back" routerLink="/">← All recipes</a>
+          <h1>{{ state.recipe.name }}</h1>
+          @if (state.recipe.description) {
+            <p class="recipe__description">{{ state.recipe.description }}</p>
+          }
+          <p class="recipe__servings">Serves {{ state.recipe.servings }}</p>
+          @if (state.recipe.categories.length) {
+            <ul class="recipe__tags">
+              @for (category of state.recipe.categories; track category) {
+                <li>{{ category }}</li>
+              }
+            </ul>
+          }
+          <a class="edit" [routerLink]="['/recipes', state.recipe.id, 'edit']">Edit</a>
+        </header>
+
+        <section>
+          <h2>Ingredients</h2>
+          <ul class="ingredients">
+            @for (ingredient of state.recipe.ingredients; track $index) {
+              <li>
+                <span class="ingredients__qty">{{ ingredient.quantity }}{{ ingredient.unit ? ' ' + ingredient.unit : '' }}</span>
+                {{ ingredient.name }}
+              </li>
+            }
+          </ul>
+        </section>
+
+        <section>
+          <h2>Steps</h2>
+          <ol class="steps">
+            @for (step of state.recipe.steps; track step.order) {
+              <li>{{ step.instruction }}</li>
+            }
+          </ol>
+        </section>
+      </article>
+    }
+    @case ('not-found') {
+      <p class="empty">Recipe not found. <a routerLink="/">Back to all recipes</a></p>
+    }
+    @default {
+      <p class="empty">Loading recipe…</p>
+    }
+  }
+}

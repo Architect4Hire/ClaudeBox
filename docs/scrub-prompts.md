@@ -128,7 +128,7 @@ ordered steps), recipe-form (create/edit), and a category-filter. Wire them to R
 CONSTRAINT: Follow .claude/rules/frontend.md.
 
 RESTRICTION: Standalone components only. Use the async pipe (or clean up subscriptions). Models
-must match the DTOs. Do NOT bypass RecipeService.
+must match the ServiceModels. Do NOT bypass RecipeService.
 
 UTILIZATION: Use the new-component skill for each component. Delegate the final review to the
 code-reviewer subagent.

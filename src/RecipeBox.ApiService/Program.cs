@@ -1,4 +1,5 @@
 using FluentValidation;
+using Microsoft.EntityFrameworkCore;
 using RecipeBox.ApiService.Data;
 using RecipeBox.ApiService.Business;
 using RecipeBox.ApiService.Facade;
@@ -35,6 +36,20 @@ builder.Services.AddControllers();
 builder.Services.AddOpenApi();
 
 var app = builder.Build();
+
+// In Development, apply pending EF migrations on startup so a fresh `aspire run` comes up with a
+// ready schema — no manual `dotnet ef database update` needed for local orchestration. Guarded to
+// the Npgsql provider so the in-memory SQLite used by the endpoint tests is never migrated with the
+// Postgres-specific migrations.
+if (app.Environment.IsDevelopment())
+{
+    using var scope = app.Services.CreateScope();
+    var db = scope.ServiceProvider.GetRequiredService<RecipeDbContext>();
+    if (db.Database.IsNpgsql())
+    {
+        await db.Database.MigrateAsync();
+    }
+}
 
 // Aspire health endpoints (/health, /alive).
 app.MapDefaultEndpoints();

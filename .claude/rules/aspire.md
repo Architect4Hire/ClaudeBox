@@ -9,7 +9,7 @@ The AppHost is the single source of truth for the application model. Keep it dec
 
 - **Declare every resource here.** Postgres, cache, the API, and the Angular app are all added
   in the AppHost (e.g. `AddPostgres(...).AddDatabase("recipesdb")`, `AddProject<...>("api")`,
-  `AddJavaScriptApp("web", "../client", "start")`). Nothing outside the AppHost invents infrastructure.
+  `AddJavaScriptApp("web", "../RecipeBox", "start")`). Nothing outside the AppHost invents infrastructure.
 - **Local-first.** Backing resources run as local containers for development — no cloud/Azure
   resources in this PoC.
 - **Wire with the model, not with strings.** Connect services using `WithReference(...)` and

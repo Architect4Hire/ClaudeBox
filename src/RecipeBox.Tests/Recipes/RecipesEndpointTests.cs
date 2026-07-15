@@ -174,5 +174,117 @@ public class RecipesEndpointTests
         Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
     }
 
+    [Fact]
+    public async Task Update_replaces_recipe_and_returns_the_new_state()
+    {
+        await using var factory = new RecipeApiFactory();
+        var id = 0;
+        await factory.SeedAsync(async db =>
+        {
+            var recipe = SampleRecipe("Bread", "Baking");
+            db.Recipes.Add(recipe);
+            await db.SaveChangesAsync();
+            id = recipe.Id;
+        });
+        var client = factory.CreateClient();
+
+        var request = new UpdateRecipeViewModel(
+            Name: "Sourdough",
+            Description: "Tangy",
+            Servings: 8,
+            Ingredients: new List<UpdateIngredientViewModel> { new("Starter", 1, "cup") },
+            Steps: new List<UpdateStepViewModel> { new(1, "Feed"), new(2, "Bake") });
+
+        var response = await client.PutAsJsonAsync($"/api/recipes/{id}", request);
+
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        var updated = await response.Content.ReadFromJsonAsync<RecipeDetailServiceModel>();
+        Assert.NotNull(updated);
+        Assert.Equal("Sourdough", updated!.Name);
+        Assert.Equal(8, updated.Servings);
+
+        // Round-trip: the persisted recipe reflects the edit, children replaced.
+        var fetched = await client.GetFromJsonAsync<RecipeDetailServiceModel>($"/api/recipes/{id}");
+        Assert.Equal("Sourdough", fetched!.Name);
+        Assert.Equal("Starter", Assert.Single(fetched.Ingredients).Name);
+        Assert.Equal(new[] { 1, 2 }, fetched.Steps.Select(s => s.Order).ToArray());
+    }
+
+    [Fact]
+    public async Task Update_returns_404_when_missing()
+    {
+        await using var factory = new RecipeApiFactory();
+        await factory.SeedAsync(_ => Task.CompletedTask);
+        var client = factory.CreateClient();
+
+        var request = new UpdateRecipeViewModel(
+            Name: "Ghost",
+            Description: null,
+            Servings: 2,
+            Ingredients: new List<UpdateIngredientViewModel> { new("Air", 1, null) },
+            Steps: new List<UpdateStepViewModel> { new(1, "Vanish") });
+
+        var response = await client.PutAsJsonAsync("/api/recipes/999", request);
+
+        Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Update_returns_400_for_invalid_request()
+    {
+        await using var factory = new RecipeApiFactory();
+        var id = 0;
+        await factory.SeedAsync(async db =>
+        {
+            var recipe = SampleRecipe("Bread", "Baking");
+            db.Recipes.Add(recipe);
+            await db.SaveChangesAsync();
+            id = recipe.Id;
+        });
+        var client = factory.CreateClient();
+
+        var invalid = new UpdateRecipeViewModel(
+            Name: "",
+            Description: null,
+            Servings: 0,
+            Ingredients: new List<UpdateIngredientViewModel>(),
+            Steps: new List<UpdateStepViewModel>());
+
+        var response = await client.PutAsJsonAsync($"/api/recipes/{id}", invalid);
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        var problem = await response.Content.ReadFromJsonAsync<ValidationProblemResponse>();
+        Assert.NotNull(problem);
+        Assert.Contains(problem!.Errors.Keys, k => k.Contains("Name"));
+    }
+
+    [Fact]
+    public async Task Update_returns_409_when_name_taken_by_another_recipe()
+    {
+        await using var factory = new RecipeApiFactory();
+        var id = 0;
+        await factory.SeedAsync(async db =>
+        {
+            db.Recipes.Add(SampleRecipe("Soup", "Mains"));
+            var bread = SampleRecipe("Bread", "Baking");
+            db.Recipes.Add(bread);
+            await db.SaveChangesAsync();
+            id = bread.Id;
+        });
+        var client = factory.CreateClient();
+
+        // Rename "Bread" to an existing recipe's name (case-insensitively).
+        var request = new UpdateRecipeViewModel(
+            Name: "soup",
+            Description: null,
+            Servings: 2,
+            Ingredients: new List<UpdateIngredientViewModel> { new("Water", 1, "cup") },
+            Steps: new List<UpdateStepViewModel> { new(1, "Combine") });
+
+        var response = await client.PutAsJsonAsync($"/api/recipes/{id}", request);
+
+        Assert.Equal(HttpStatusCode.Conflict, response.StatusCode);
+    }
+
     private sealed record ValidationProblemResponse(Dictionary<string, string[]> Errors);
 }
