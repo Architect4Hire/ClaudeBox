@@ -22,7 +22,7 @@ truth and confirm exact API names before standardizing.
 | -------------- | ------------------------------------------------------------------ | ---------------------------------------------- |
 | Orchestration  | AppHost declares Postgres, API, Angular; dashboard for logs/traces | `aspire.md` rule + `add-aspire-resource` skill |
 | Backend        | ASP.NET Core API + EF Core (Npgsql)                                | `backend.md` rule + `add-endpoint` skill       |
-| Frontend       | Angular launched via `AddNpmApp`                                   | `frontend.md` rule + `new-component` skill     |
+| Frontend       | Angular launched via `AddJavaScriptApp`                            | `frontend.md` rule + `new-component` skill     |
 | Quality gates  | format on save, block secrets                                      | hooks in `settings.json`                       |
 | Delegated work | reviews, test-gap analysis                                         | `code-reviewer`, `test-gap-analyzer` subagents |
 | External tools | inspect DB, drive the browser                                      | MCP servers (Postgres, Playwright)             |
@@ -109,10 +109,10 @@ truth and confirm exact API names before standardizing.
 **Do:**
 
 - `ng new client` inside `src/` (CSS, no SSR to start).
-- Add `Aspire.Hosting.NodeJS` to the AppHost and register the app:
+- Add `Aspire.Hosting.JavaScript` to the AppHost and register the app:
   
   ```csharp
-  builder.AddNpmApp("web", "../client", "start")
+  builder.AddJavaScriptApp("web", "../client", "start")
          .WithReference(api)
          .WithHttpEndpoint(env: "PORT")
          .WithExternalHttpEndpoints();

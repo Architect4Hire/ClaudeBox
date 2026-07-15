@@ -43,7 +43,7 @@ SCOPE: Stand up the RecipeBox solution skeleton only (no business logic). Create
 solution on .NET 10 with these projects under src/: RecipeBox.AppHost (orchestrator),
 RecipeBox.ServiceDefaults, and RecipeBox.ApiService (ASP.NET Core Web API). In the AppHost,
 declare a local PostgreSQL resource with a database named "recipesdb", register the ApiService,
-and register the Angular app in src/client as an npm app so Aspire launches it.
+and register the Angular app in src/RecipeBox as an npm app so Aspire launches it.
 
 CONSTRAINT: Follow .claude/rules/aspire.md. All resources are local containers. Verify the exact
 Aspire commands, template names, and API (AddNpmApp, package names) against https://aspire.dev

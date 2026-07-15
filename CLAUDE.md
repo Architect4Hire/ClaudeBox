@@ -11,7 +11,7 @@ dependencies. The Aspire dashboard is the front door for logs, traces, and healt
 ## Stack
 - **Orchestration:** Aspire 13 (AppHost + ServiceDefaults) on .NET 10
 - **Backend:** ASP.NET Core Web API · EF Core (Npgsql) — `src/RecipeBox.ApiService/`
-- **Frontend:** Angular (standalone components, strict TS) — `src/client/`, run via `AddNpmApp`
+- **Frontend:** Angular (standalone components, strict TS) — `src/client/`, run via `AddJavaScriptApp`
 - **Data/infra (local containers via Aspire):** PostgreSQL, and a cache if/when needed
 
 ## Layout
@@ -20,7 +20,7 @@ src/
 ├── RecipeBox.AppHost/          # Aspire orchestrator — declares every resource
 ├── RecipeBox.ServiceDefaults/  # shared telemetry, health checks, resilience, discovery
 ├── RecipeBox.ApiService/       # ASP.NET Core API + EF Core
-└── RecipeBox/                     # Angular app (AddNpmApp target)
+└── RecipeBox/                     # Angular app (AddJavaScriptApp target)
 ```
 
 ## Commands (use these verbatim)
@@ -35,7 +35,7 @@ Backend (from `src/RecipeBox.ApiService/`):
 
 Frontend (from `src/RecipeBox/`):
 - Install: `npm install`  ·  Test: `ng test`  ·  Build: `ng build`
-- (Don't `ng serve` by hand — Aspire launches it via `AddNpmApp`.)
+- (Don't `ng serve` by hand — Aspire launches it via `AddJavaScriptApp`.)
 
 ## Non-negotiable conventions
 Area detail loads automatically from `.claude/rules/` (`aspire.md`, `backend.md`, `frontend.md`).

@@ -1,0 +1,8 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/RecipeBox.ApiService/RecipeBox.ApiService.csproj" />
+    <Project Path="src/RecipeBox.AppHost/RecipeBox.AppHost.csproj" />
+    <Project Path="src/RecipeBox.ServiceDefaults/RecipeBox.ServiceDefaults.csproj" />
+    <Project Path="src/RecipeBox.Tests/RecipeBox.Tests.csproj" />
+  </Folder>
+</Solution>

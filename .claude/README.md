@@ -47,5 +47,5 @@ Then open a session: `/memory` confirms the rules load, `/agents` shows the suba
 
 ## Verify before trusting
 Aspire and Claude Code both ship fast. The `settings.json` hook syntax, subagent frontmatter,
-and exact Aspire API names (`AddNpmApp`, client integrations, package names) are the most likely
+and exact Aspire API names (`AddJavaScriptApp`, client integrations, package names) are the most likely
 things to drift — confirm against https://code.claude.com/docs and https://aspire.dev.

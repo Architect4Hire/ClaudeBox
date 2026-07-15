@@ -6,7 +6,7 @@ paths:
 
 - **Standalone components** (no NgModules). One feature per folder.
 - **Strict TypeScript.** No `any`. Model interfaces mirror the backend DTOs exactly.
-- **API base URL comes from Aspire.** The app is launched by `AddNpmApp`, so read the API
+- **API base URL comes from Aspire.** The app is launched by `AddJavaScriptApp`, so read the API
   endpoint from injected environment/config — don't hardcode `localhost:port`.
 - **Data access through services.** Components never call `HttpClient` directly; use a typed
   service. One service per resource (e.g. `RecipeService`, `CategoryService`).

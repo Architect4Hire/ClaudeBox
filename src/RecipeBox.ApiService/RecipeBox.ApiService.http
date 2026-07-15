@@ -1,0 +1,6 @@
+@RecipeBox.ApiService_HostAddress = http://localhost:5262
+
+GET {{RecipeBox.ApiService_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
