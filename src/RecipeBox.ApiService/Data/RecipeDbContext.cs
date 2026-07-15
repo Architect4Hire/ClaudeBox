@@ -1,5 +1,5 @@
 using Microsoft.EntityFrameworkCore;
-using RecipeBox.ApiService.Domain;
+using RecipeBox.ApiService.Managers.Models.Domain;
 
 namespace RecipeBox.ApiService.Data;
 

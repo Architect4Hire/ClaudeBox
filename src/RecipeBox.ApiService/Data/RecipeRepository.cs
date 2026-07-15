@@ -1,11 +1,9 @@
 using Microsoft.EntityFrameworkCore;
 using Npgsql;
-using RecipeBox.ApiService.Data;
-using RecipeBox.ApiService.Domain;
-using RecipeBox.ApiService.Features.Recipes;
-using RecipeBox.ApiService.Features.Recipes.Models;
+using RecipeBox.ApiService.Managers.Models.Domain;
+using RecipeBox.ApiService.Managers.Models.ServiceModels;
 
-namespace RecipeBox.ApiService.Features.Recipes.Data;
+namespace RecipeBox.ApiService.Data;
 
 /// <summary>
 /// EF Core implementation of <see cref="IRecipeRepository"/> against the Aspire-provided
@@ -22,7 +20,7 @@ public class RecipeRepository(RecipeDbContext db) : IRecipeRepository
     /// </summary>
     public const string RecipeNameUniqueIndex = "IX_Recipes_Name_Lower";
 
-    public async Task<IReadOnlyList<RecipeListItem>> ListAsync(string? category, CancellationToken ct)
+    public async Task<IReadOnlyList<RecipeSummaryServiceModel>> ListAsync(string? category, CancellationToken ct)
     {
         var query = _db.Recipes.AsNoTracking();
 
@@ -31,10 +29,12 @@ public class RecipeRepository(RecipeDbContext db) : IRecipeRepository
             query = query.Where(r => r.Categories.Any(c => c.Name == category));
         }
 
-        // Project counts in SQL so we never materialize ingredient/step rows for a list view.
+        // Project counts in SQL straight into the summary service model, so a list view never
+        // materializes ingredient/step rows. This is the one place the data layer builds an outbound
+        // model — the alternative (return entities and count in memory) would defeat the projection.
         return await query
             .OrderBy(r => r.Name)
-            .Select(r => new RecipeListItem(
+            .Select(r => new RecipeSummaryServiceModel(
                 r.Id,
                 r.Name,
                 r.Description,

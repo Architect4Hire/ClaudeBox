@@ -1,4 +1,4 @@
-namespace RecipeBox.ApiService.Domain;
+namespace RecipeBox.ApiService.Managers.Models.Domain;
 
 /// <summary>
 /// A single ingredient line belonging to one recipe (e.g. 1.5 "cups" of flour).

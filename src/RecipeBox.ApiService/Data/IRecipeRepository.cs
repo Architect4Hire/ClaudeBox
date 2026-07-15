@@ -1,15 +1,18 @@
-using RecipeBox.ApiService.Domain;
-using RecipeBox.ApiService.Features.Recipes.Models;
+using RecipeBox.ApiService.Managers.Models.Domain;
+using RecipeBox.ApiService.Managers.Models.ServiceModels;
 
-namespace RecipeBox.ApiService.Features.Recipes.Data;
+namespace RecipeBox.ApiService.Data;
 
 /// <summary>
 /// Persistence for the Recipes feature. Data access only — no validation, caching, or domain rules.
+/// Detail reads and writes return the domain <see cref="Recipe"/> entity for the business layer to
+/// map; the list read is projected straight to <see cref="RecipeSummaryServiceModel"/> in SQL so a
+/// list view never materializes ingredient/step rows.
 /// </summary>
 public interface IRecipeRepository
 {
-    /// <summary>Summary projections, optionally filtered to recipes in the named category.</summary>
-    Task<IReadOnlyList<RecipeListItem>> ListAsync(string? category, CancellationToken ct);
+    /// <summary>Summary rows, optionally filtered to recipes in the named category.</summary>
+    Task<IReadOnlyList<RecipeSummaryServiceModel>> ListAsync(string? category, CancellationToken ct);
 
     /// <summary>
     /// One recipe with its ingredients, steps (ordered by <see cref="Step.Order"/>), categories, and

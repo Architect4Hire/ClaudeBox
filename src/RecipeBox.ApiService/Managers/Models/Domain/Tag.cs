@@ -1,4 +1,4 @@
-namespace RecipeBox.ApiService.Domain;
+namespace RecipeBox.ApiService.Managers.Models.Domain;
 
 /// <summary>
 /// A freeform label (e.g. "quick", "gluten-free"). Many-to-many with recipes.

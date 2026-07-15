@@ -1,4 +1,4 @@
-namespace RecipeBox.ApiService.Domain;
+namespace RecipeBox.ApiService.Managers.Models.Domain;
 
 /// <summary>
 /// A structured taxonomy value (e.g. "Main Course", "Dessert"). Many-to-many with recipes.

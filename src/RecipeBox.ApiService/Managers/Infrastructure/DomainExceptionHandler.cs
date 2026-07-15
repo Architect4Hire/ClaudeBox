@@ -1,9 +1,9 @@
 using FluentValidation;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
-using RecipeBox.ApiService.Features.Recipes;
+using RecipeBox.ApiService.Managers.Models.Domain;
 
-namespace RecipeBox.ApiService.Infrastructure;
+namespace RecipeBox.ApiService.Managers.Infrastructure;
 
 /// <summary>
 /// Translates domain and validation exceptions into the shared ProblemDetails error shape, so no

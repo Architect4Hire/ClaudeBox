@@ -1,4 +1,4 @@
-namespace RecipeBox.ApiService.Domain;
+namespace RecipeBox.ApiService.Managers.Models.Domain;
 
 /// <summary>
 /// One ordered instruction within a recipe. <see cref="Order"/> is 1-based and unique per recipe.

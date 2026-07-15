@@ -1,4 +1,4 @@
-namespace RecipeBox.ApiService.Features.Recipes;
+namespace RecipeBox.ApiService.Managers.Models.Domain;
 
 /// <summary>
 /// Raised by the business layer when a recipe cannot be created because its name is already taken.

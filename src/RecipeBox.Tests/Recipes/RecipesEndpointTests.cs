@@ -1,7 +1,8 @@
 using System.Net;
 using System.Net.Http.Json;
-using RecipeBox.ApiService.Domain;
-using RecipeBox.ApiService.Features.Recipes.Dtos;
+using RecipeBox.ApiService.Managers.Models.Domain;
+using RecipeBox.ApiService.Managers.Models.ServiceModels;
+using RecipeBox.ApiService.Managers.Models.ViewModels;
 using Xunit;
 
 namespace RecipeBox.Tests.Recipes;
@@ -38,7 +39,7 @@ public class RecipesEndpointTests
         });
         var client = factory.CreateClient();
 
-        var recipes = await client.GetFromJsonAsync<List<RecipeSummaryDto>>("/api/recipes");
+        var recipes = await client.GetFromJsonAsync<List<RecipeSummaryServiceModel>>("/api/recipes");
 
         Assert.NotNull(recipes);
         Assert.Equal(2, recipes!.Count);
@@ -57,7 +58,7 @@ public class RecipesEndpointTests
         });
         var client = factory.CreateClient();
 
-        var recipes = await client.GetFromJsonAsync<List<RecipeSummaryDto>>("/api/recipes?category=Mains");
+        var recipes = await client.GetFromJsonAsync<List<RecipeSummaryServiceModel>>("/api/recipes?category=Mains");
 
         Assert.NotNull(recipes);
         Assert.Equal("Soup", Assert.Single(recipes!).Name);
@@ -77,7 +78,7 @@ public class RecipesEndpointTests
         });
         var client = factory.CreateClient();
 
-        var recipe = await client.GetFromJsonAsync<RecipeDetailDto>($"/api/recipes/{id}");
+        var recipe = await client.GetFromJsonAsync<RecipeDetailServiceModel>($"/api/recipes/{id}");
 
         Assert.NotNull(recipe);
         Assert.Equal("Bread", recipe!.Name);
@@ -105,25 +106,25 @@ public class RecipesEndpointTests
         await factory.SeedAsync(_ => Task.CompletedTask);
         var client = factory.CreateClient();
 
-        var request = new CreateRecipeRequest(
+        var request = new CreateRecipeViewModel(
             Name: "Pancakes",
             Description: "Fluffy",
             Servings: 4,
-            Ingredients: new List<CreateIngredientRequest> { new("Flour", 2, "cups") },
-            Steps: new List<CreateStepRequest> { new(1, "Mix"), new(2, "Cook") });
+            Ingredients: new List<CreateIngredientViewModel> { new("Flour", 2, "cups") },
+            Steps: new List<CreateStepViewModel> { new(1, "Mix"), new(2, "Cook") });
 
         var response = await client.PostAsJsonAsync("/api/recipes", request);
 
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
         Assert.NotNull(response.Headers.Location);
 
-        var created = await response.Content.ReadFromJsonAsync<RecipeDetailDto>();
+        var created = await response.Content.ReadFromJsonAsync<RecipeDetailServiceModel>();
         Assert.NotNull(created);
         Assert.True(created!.Id > 0);
         Assert.Equal("Pancakes", created.Name);
 
         // Round-trip: the created recipe is retrievable.
-        var fetched = await client.GetFromJsonAsync<RecipeDetailDto>($"/api/recipes/{created.Id}");
+        var fetched = await client.GetFromJsonAsync<RecipeDetailServiceModel>($"/api/recipes/{created.Id}");
         Assert.Equal("Pancakes", fetched!.Name);
         Assert.Equal(2, fetched.Steps.Count);
     }
@@ -135,12 +136,12 @@ public class RecipesEndpointTests
         await factory.SeedAsync(_ => Task.CompletedTask);
         var client = factory.CreateClient();
 
-        var invalid = new CreateRecipeRequest(
+        var invalid = new CreateRecipeViewModel(
             Name: "",
             Description: null,
             Servings: 0,
-            Ingredients: new List<CreateIngredientRequest>(),
-            Steps: new List<CreateStepRequest>());
+            Ingredients: new List<CreateIngredientViewModel>(),
+            Steps: new List<CreateStepViewModel>());
 
         var response = await client.PostAsJsonAsync("/api/recipes", invalid);
 
@@ -161,12 +162,12 @@ public class RecipesEndpointTests
         });
         var client = factory.CreateClient();
 
-        var request = new CreateRecipeRequest(
+        var request = new CreateRecipeViewModel(
             Name: "bread", // different case — the rule is case-insensitive
             Description: null,
             Servings: 2,
-            Ingredients: new List<CreateIngredientRequest> { new("Water", 1, "cup") },
-            Steps: new List<CreateStepRequest> { new(1, "Combine") });
+            Ingredients: new List<CreateIngredientViewModel> { new("Water", 1, "cup") },
+            Steps: new List<CreateStepViewModel> { new(1, "Combine") });
 
         var response = await client.PostAsJsonAsync("/api/recipes", request);
 

@@ -1,15 +1,15 @@
 using FluentValidation;
-using RecipeBox.ApiService.Features.Recipes.Dtos;
+using RecipeBox.ApiService.Managers.Models.ViewModels;
 
-namespace RecipeBox.ApiService.Features.Recipes;
+namespace RecipeBox.ApiService.Managers.Validators;
 
 /// <summary>
-/// Edge validation for <see cref="CreateRecipeRequest"/>. Enforces shape/format rules only; the
-/// data-dependent unique-name rule lives in the business layer.
+/// Edge validation for <see cref="CreateRecipeViewModel"/>, run by the facade. Enforces shape/format
+/// rules only; the data-dependent unique-name rule lives in the business layer.
 /// </summary>
-public class CreateRecipeRequestValidator : AbstractValidator<CreateRecipeRequest>
+public class CreateRecipeViewModelValidator : AbstractValidator<CreateRecipeViewModel>
 {
-    public CreateRecipeRequestValidator()
+    public CreateRecipeViewModelValidator()
     {
         RuleFor(r => r.Name)
             .NotEmpty()
@@ -44,6 +44,6 @@ public class CreateRecipeRequestValidator : AbstractValidator<CreateRecipeReques
             .Must(HaveUniqueOrders).WithMessage("Step orders must be unique within a recipe.");
     }
 
-    private static bool HaveUniqueOrders(IReadOnlyList<CreateStepRequest> steps) =>
+    private static bool HaveUniqueOrders(IReadOnlyList<CreateStepViewModel> steps) =>
         steps is null || steps.Select(s => s.Order).Distinct().Count() == steps.Count;
 }

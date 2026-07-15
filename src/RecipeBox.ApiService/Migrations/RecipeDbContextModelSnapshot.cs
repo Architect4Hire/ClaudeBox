@@ -36,7 +36,7 @@ namespace RecipeBox.ApiService.Migrations
                     b.ToTable("CategoryRecipe");
                 });
 
-            modelBuilder.Entity("RecipeBox.ApiService.Domain.Category", b =>
+            modelBuilder.Entity("RecipeBox.ApiService.Managers.Models.Domain.Category", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -57,7 +57,7 @@ namespace RecipeBox.ApiService.Migrations
                     b.ToTable("Categories");
                 });
 
-            modelBuilder.Entity("RecipeBox.ApiService.Domain.Ingredient", b =>
+            modelBuilder.Entity("RecipeBox.ApiService.Managers.Models.Domain.Ingredient", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -88,7 +88,7 @@ namespace RecipeBox.ApiService.Migrations
                     b.ToTable("Ingredients");
                 });
 
-            modelBuilder.Entity("RecipeBox.ApiService.Domain.Recipe", b =>
+            modelBuilder.Entity("RecipeBox.ApiService.Managers.Models.Domain.Recipe", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -113,7 +113,7 @@ namespace RecipeBox.ApiService.Migrations
                     b.ToTable("Recipes");
                 });
 
-            modelBuilder.Entity("RecipeBox.ApiService.Domain.Step", b =>
+            modelBuilder.Entity("RecipeBox.ApiService.Managers.Models.Domain.Step", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -140,7 +140,7 @@ namespace RecipeBox.ApiService.Migrations
                     b.ToTable("Steps");
                 });
 
-            modelBuilder.Entity("RecipeBox.ApiService.Domain.Tag", b =>
+            modelBuilder.Entity("RecipeBox.ApiService.Managers.Models.Domain.Tag", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -178,22 +178,22 @@ namespace RecipeBox.ApiService.Migrations
 
             modelBuilder.Entity("CategoryRecipe", b =>
                 {
-                    b.HasOne("RecipeBox.ApiService.Domain.Category", null)
+                    b.HasOne("RecipeBox.ApiService.Managers.Models.Domain.Category", null)
                         .WithMany()
                         .HasForeignKey("CategoriesId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("RecipeBox.ApiService.Domain.Recipe", null)
+                    b.HasOne("RecipeBox.ApiService.Managers.Models.Domain.Recipe", null)
                         .WithMany()
                         .HasForeignKey("RecipesId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("RecipeBox.ApiService.Domain.Ingredient", b =>
+            modelBuilder.Entity("RecipeBox.ApiService.Managers.Models.Domain.Ingredient", b =>
                 {
-                    b.HasOne("RecipeBox.ApiService.Domain.Recipe", "Recipe")
+                    b.HasOne("RecipeBox.ApiService.Managers.Models.Domain.Recipe", "Recipe")
                         .WithMany("Ingredients")
                         .HasForeignKey("RecipeId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -202,9 +202,9 @@ namespace RecipeBox.ApiService.Migrations
                     b.Navigation("Recipe");
                 });
 
-            modelBuilder.Entity("RecipeBox.ApiService.Domain.Step", b =>
+            modelBuilder.Entity("RecipeBox.ApiService.Managers.Models.Domain.Step", b =>
                 {
-                    b.HasOne("RecipeBox.ApiService.Domain.Recipe", "Recipe")
+                    b.HasOne("RecipeBox.ApiService.Managers.Models.Domain.Recipe", "Recipe")
                         .WithMany("Steps")
                         .HasForeignKey("RecipeId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -215,20 +215,20 @@ namespace RecipeBox.ApiService.Migrations
 
             modelBuilder.Entity("RecipeTag", b =>
                 {
-                    b.HasOne("RecipeBox.ApiService.Domain.Recipe", null)
+                    b.HasOne("RecipeBox.ApiService.Managers.Models.Domain.Recipe", null)
                         .WithMany()
                         .HasForeignKey("RecipesId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("RecipeBox.ApiService.Domain.Tag", null)
+                    b.HasOne("RecipeBox.ApiService.Managers.Models.Domain.Tag", null)
                         .WithMany()
                         .HasForeignKey("TagsId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("RecipeBox.ApiService.Domain.Recipe", b =>
+            modelBuilder.Entity("RecipeBox.ApiService.Managers.Models.Domain.Recipe", b =>
                 {
                     b.Navigation("Ingredients");
 

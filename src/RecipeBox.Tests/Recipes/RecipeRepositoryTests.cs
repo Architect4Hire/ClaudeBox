@@ -1,8 +1,7 @@
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using RecipeBox.ApiService.Data;
-using RecipeBox.ApiService.Domain;
-using RecipeBox.ApiService.Features.Recipes.Data;
+using RecipeBox.ApiService.Managers.Models.Domain;
 using Xunit;
 
 namespace RecipeBox.Tests.Recipes;

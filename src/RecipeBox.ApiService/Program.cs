@@ -1,10 +1,9 @@
 using FluentValidation;
 using RecipeBox.ApiService.Data;
-using RecipeBox.ApiService.Features.Recipes;
-using RecipeBox.ApiService.Features.Recipes.Business;
-using RecipeBox.ApiService.Features.Recipes.Data;
-using RecipeBox.ApiService.Features.Recipes.Facade;
-using RecipeBox.ApiService.Infrastructure;
+using RecipeBox.ApiService.Business;
+using RecipeBox.ApiService.Facade;
+using RecipeBox.ApiService.Managers.Infrastructure;
+using RecipeBox.ApiService.Managers.Validators;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -23,7 +22,7 @@ builder.AddRedisDistributedCache("cache");
 builder.Services.AddScoped<IRecipeRepository, RecipeRepository>();
 builder.Services.AddScoped<IRecipeBusiness, RecipeBusiness>();
 builder.Services.AddScoped<IRecipeFacade, RecipeFacade>();
-builder.Services.AddValidatorsFromAssemblyContaining<CreateRecipeRequestValidator>();
+builder.Services.AddValidatorsFromAssemblyContaining<CreateRecipeViewModelValidator>();
 
 // Shared error shape: ProblemDetails, with domain/validation exceptions mapped centrally.
 builder.Services.AddProblemDetails();

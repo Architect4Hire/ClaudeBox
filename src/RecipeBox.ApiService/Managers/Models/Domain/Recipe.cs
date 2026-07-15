@@ -1,4 +1,4 @@
-namespace RecipeBox.ApiService.Domain;
+namespace RecipeBox.ApiService.Managers.Models.Domain;
 
 /// <summary>
 /// A recipe: its descriptive header plus its ingredients, ordered steps, and taxonomy.
