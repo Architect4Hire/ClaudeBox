@@ -1,0 +1,57 @@
+# ─────────────────────────────────────────────
+#  RecipeBox — Aspire (.NET / Visual Studio) + Angular + Claude Code
+# ─────────────────────────────────────────────
+
+# ── .NET / Visual Studio ──────────────────────
+bin/
+obj/
+.vs/
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+[Dd]ebug/
+[Rr]elease/
+artifacts/
+project.lock.json
+# NOTE: keep EF Core Migrations/ committed — they're source, not build output.
+
+# ── Aspire ────────────────────────────────────
+# AppHost bin/obj are covered above. Ignore local orchestration/user config only.
+**/.aspire/
+aspire-output/
+
+# ── Angular / Node ────────────────────────────
+node_modules/
+dist/
+tmp/
+out-tsc/
+.angular/
+coverage/
+.nyc_output/
+*.log
+npm-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# ── Secrets / environment ─────────────────────
+# .NET user-secrets live outside the repo already; these catch the rest.
+.env
+.env.*
+*.env
+secrets.json
+appsettings.*.Local.json
+
+# ── Claude Code ───────────────────────────────
+# The rest of .claude/ is committed on purpose — it's the whole point.
+# Only ignore personal/local overrides and anything credential-shaped.
+.claude/settings.local.json
+.claude/**/*.local.*
+.claude/.credentials.json
+CLAUDE.local.md
+
+# ── OS / editor ───────────────────────────────
+.DS_Store
+Thumbs.db
+*.swp
+.idea/
