@@ -1,7 +1,7 @@
 # src
 
 The application lives here. It's scaffolded by driving Claude Code with the SCRUB prompts in
-[`../docs/scrub-scaffolding-prompts.md`](../docs/scrub-scaffolding-prompts.md).
+[`../docs/scrub-prompts.md`](../docs/scrub-prompts.md).
 
 Intended layout once scaffolded:
 

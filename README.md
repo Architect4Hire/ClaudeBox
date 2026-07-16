@@ -27,13 +27,15 @@ demonstration of driving a real .NET stack agentically with Claude Code.
 ## How this repo was built
 The application in `src/` is scaffolded by driving Claude Code with a set of **SCRUB** prompts —
 one controlled, plan-first step at a time. The full sequence is in
-[`docs/scrub-scaffolding-prompts.md`](docs/scrub-scaffolding-prompts.md); the broader learning
-arc is in [`docs/30-day-claude-code-plan.md`](docs/30-day-claude-code-plan.md).
+[`docs/scrub-prompts.md`](docs/scrub-prompts.md); the broader learning arc is in
+[`docs/30-day-recipebox-build-plan.md`](docs/30-day-recipebox-build-plan.md) and its long-form
+companion [`docs/30-day-deep-dive.md`](docs/30-day-deep-dive.md).
 
 The `.claude/` folder is what makes those prompts work: reusable **skills** (`add-endpoint`,
 `new-component`, `add-aspire-resource`), read-only **subagents** (`code-reviewer`,
-`test-gap-analyzer`), a formatting **hook**, and path-scoped **rules** for Aspire, the backend,
-and the frontend. See [`.claude/README.md`](.claude/README.md) for what each piece does.
+`test-gap-analyzer`, `api-contract-checker`, `skills-evals`), **hooks** (formatting and a secret
+guard), and path-scoped **rules** for Aspire, the backend, and the frontend. See
+[`.claude/README.md`](.claude/README.md) for what each piece does.
 
 ## Getting started
 1. Prerequisites: .NET 10 SDK, the Aspire CLI, Node.js, and a container runtime (Docker/Podman).
