@@ -12,7 +12,10 @@ const RECIPE: RecipeDetailDto = {
   description: 'Warm',
   servings: 2,
   ingredients: [{ name: 'Water', quantity: 1.5, unit: 'L' }],
-  steps: [{ order: 1, instruction: 'Boil' }, { order: 2, instruction: 'Serve' }],
+  steps: [
+    { order: 1, instruction: 'Boil' },
+    { order: 2, instruction: 'Serve' },
+  ],
   categories: ['Dinner'],
   tags: [],
 };
@@ -40,7 +43,7 @@ describe('RecipeDetail', () => {
     expect(getById).toHaveBeenCalledWith(7);
     expect(fixture.nativeElement.querySelector('h1').textContent).toContain('Soup');
     const steps = Array.from(
-      (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLElement>('.steps li'),
+      (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLElement>('.steps__text'),
     ).map((el) => el.textContent?.trim());
     expect(steps).toEqual(['Boil', 'Serve']);
   });

@@ -29,7 +29,7 @@ You moved fast; lock in that everything runs before adding more. This day writes
 4. **Backend tests:** in a second terminal, from the repo root, `dotnet test`. Expect green.
 5. **Frontend tests:** from `src/RecipeBox`, `ng test --watch=false --browsers=ChromeHeadless`. Expect green.
 6. **Prove cache invalidation** (the Redis resource is wired for read-through caching — confirm the write path busts it): call `GET /recipes` (via the app or Swagger), create a new recipe, call `GET /recipes` again. **The new recipe must appear.** If it doesn't, the create path isn't invalidating the list cache.
-  - If it's stale, `/clear` and: *"The recipe list is served from the Redis cache but a newly created recipe doesn't appear until the cache expires. Find where the list is cached and invalidate (or update) it on create/update/delete. Follow `.claude/rules/backend.md`. Plan first, then add a test that proves a created recipe shows up immediately."*
+   - If it's stale, `/clear` and: *"The recipe list is served from the Redis cache but a newly created recipe doesn't appear until the cache expires. Find where the list is cached and invalidate (or update) it on create/update/delete. Follow `.claude/rules/backend.md`. Plan first, then add a test that proves a created recipe shows up immediately."*
 7. **Commit:** `git commit -am "day 1: verified stack + cache invalidation"`.
 
 **If it breaks:** `web` unhealthy → the `PORT`/start-script wiring; check `src/RecipeBox/package.json`. A test hangs → make sure you passed `--watch=false`. `api` unhealthy → open its logs; a migration or DB-connection error shows there.
@@ -46,25 +46,26 @@ You have the `PostToolUse` formatter. The missing half of your Restrictions laye
 **Steps:**
 
 1. **Create the hook script** at `.claude/hooks/secret-guard.sh`. This is a robust starting point that scans the tool-call payload for secret-shaped strings and denies on a match (⚠️ confirm the current PreToolUse input shape + exit-code-2 "deny" semantics at https://code.claude.com/docs/en/hooks):
-  
-  ```bash
-  #!/usr/bin/env bash
-  # PreToolUse guard: deny writes containing secret-shaped strings. exit 2 = deny.
-  set -euo pipefail
-  payload="$(cat)"
-  patterns='(sk-[A-Za-z0-9]{16,}|AKIA[0-9A-Z]{16}|-----BEGIN [A-Z ]*PRIVATE KEY-----|password[[:space:]]*=[[:space:]]*["'\''][^"'\'' ]{6,}|(postgres|redis)://[^:@/]+:[^@/]+@)'
-  if printf '%s' "$payload" | grep -Eiq "$patterns"; then
+   
+   ```bash
+   #!/usr/bin/env bash
+   # PreToolUse guard: deny writes containing secret-shaped strings. exit 2 = deny.
+   set -euo pipefail
+   payload="$(cat)"
+   patterns='(sk-[A-Za-z0-9]{16,}|AKIA[0-9A-Z]{16}|-----BEGIN [A-Z ]*PRIVATE KEY-----|password[[:space:]]*=[[:space:]]*["'\''][^"'\'' ]{6,}|(postgres|redis)://[^:@/]+:[^@/]+@)'
+   if printf '%s' "$payload" | grep -Eiq "$patterns"; then
     echo "secret-guard: blocked a write with a secret-shaped string. Use Aspire-injected config, not literals." >&2
     exit 2
-  fi
-  exit 0
-  ```
-  
+   fi
+   exit 0
+   ```
+
 2. **Make it executable:** `chmod +x .claude/hooks/secret-guard.sh`.
+
 3. **Wire it in `.claude/settings.json`** alongside your existing formatter (keep the `PostToolUse` block you already have):
-  
-  ```json
-  {
+   
+   ```json
+   {
     "hooks": {
       "PreToolUse": [
         { "matcher": "Edit|Write|MultiEdit",
@@ -75,10 +76,11 @@ You have the `PostToolUse` formatter. The missing half of your Restrictions laye
           "hooks": [ { "type": "command", "command": ".claude/hooks/format.sh" } ] }
       ]
     }
-  }
-  ```
-  
+   }
+   ```
+
 4. **Test the deny path:** `/clear`, then ask Claude to write a throwaway file containing `const k = "sk-live-abcdef0123456789xyz";`. The write should be **blocked**. `/rewind` the attempt.
+
 5. **Test the allow path:** ask for a normal one-line edit and confirm it goes through (and the formatter still fires). Commit.
 
 **If it breaks:** guard doesn't block → it must exit non-zero (2), and the matcher/event name must match your version's schema (re-check the hooks doc). Formatter stopped firing → you replaced the `PostToolUse` block instead of keeping it; both must be present.
@@ -96,13 +98,16 @@ You have `code-reviewer` and `test-gap-analyzer`. Add one narrow specialist that
 **Steps:**
 
 1. **`/clear`**, then have Claude write it (contract-drift is a great fit — you have API DTOs and Angular models that must stay in sync):
-  
-  > "Create a read-only `api-contract-checker` subagent in `.claude/agents/` with tools Read, Grep, Glob only. Its job: compare the API's ViewModels/ServiceModels in `src/RecipeBox.ApiService/Managers/Models` against the Angular interfaces in `src/RecipeBox/src/app/models/recipe.models.ts`, and report every field-name or type mismatch as `file → field → issue`. Give it a sharp `description` that triggers on phrasings like 'check contract drift' or 'do the DTOs and models match'. Show me the file before writing."
-  > *(Prefer `migration-reviewer` instead if EF migrations worry you more — it flags destructive column drops/renames.)*
-  
+   
+   > "Create a read-only `api-contract-checker` subagent in `.claude/agents/` with tools Read, Grep, Glob only. Its job: compare the API's ViewModels/ServiceModels in `src/RecipeBox.ApiService/Managers/Models` against the Angular interfaces in `src/RecipeBox/src/app/models/recipe.models.ts`, and report every field-name or type mismatch as `file → field → issue`. Give it a sharp `description` that triggers on phrasings like 'check contract drift' or 'do the DTOs and models match'. Show me the file before writing."
+   > *(Prefer `migration-reviewer` instead if EF migrations worry you more — it flags destructive column drops/renames.)*
+
 2. **Keep it read-only.** Read/search tools only — a subagent can't surface permission prompts, so it must never edit; the main session makes fixes.
+
 3. **Run it** against the current code and confirm the output is specific (names the file and field), not vague. Fix any real drift it finds.
+
 4. **(Optional, 10 min) `docs/skill-evals.md`** — 3–5 concrete "did it do the right thing?" checks per skill (e.g., add-endpoint: "returns DTOs not EF entities", "controller stays thin", "validation covered by a test"). Your tests prove the code; this documents the skill bar.
+
 5. **Commit.**
 
 **If it breaks:** output too generic → tighten its system prompt to demand `file → field → issue` and forbid general commentary. Doesn't trigger → the `description` describes what it *is* instead of *when to use it*; rewrite as trigger conditions.
@@ -140,11 +145,13 @@ Turn the browser walkthrough into a durable regression test you'll reuse in CI.
 **Steps:**
 
 1. **`/clear`**, with `aspire run` up in another terminal:
-  
-  > "Using the Playwright MCP, walk the full flow — create a recipe → view its detail (ingredients + ordered steps) → edit it → filter by category — and report any step that fails. Then turn the successful walk into a reusable spec at `src/RecipeBox/e2e/recipe-flow.spec.ts` using role/text selectors (not brittle CSS)."
-  
+   
+   > "Using the Playwright MCP, walk the full flow — create a recipe → view its detail (ingredients + ordered steps) → edit it → filter by category — and report any step that fails. Then turn the successful walk into a reusable spec at `src/RecipeBox/e2e/recipe-flow.spec.ts` using role/text selectors (not brittle CSS)."
+
 2. **Harden selectors.** If it used fragile CSS, ask it to switch to `getByRole`/`getByText` so the test survives markup tweaks.
+
 3. **Run headless:** ⚠️ confirm your Playwright runner, then e.g. `npx playwright test` from `src/RecipeBox`. Get it green.
+
 4. **Commit** the spec.
 
 **If it breaks:** flaky waits → have Claude add explicit `expect(...).toBeVisible()` waits instead of fixed timeouts. Test can't find the app → the base URL; wire it from an env var, don't hardcode.
@@ -162,12 +169,14 @@ Ship a single feature routed deliberately through every primitive, then learn to
 **Steps:**
 
 1. **`/clear`**, then ship "search recipes by ingredient" (a genuinely useful feature you likely don't have yet):
-  
-  > "Deliver 'search recipes by ingredient' end to end. Plan first. Use the `add-endpoint` skill for the API (a filtered list route) and `new-component` for a search box wired to `RecipeService`. When code is done, run the `code-reviewer` subagent; the formatter + secret-guard hooks fire on their own; then smoke the search flow via the Playwright MCP. Follow `.claude/rules/`."
-  > *(Already have search? Swap in any small vertical slice — the point is one feature through every layer.)*
-  
+   
+   > "Deliver 'search recipes by ingredient' end to end. Plan first. Use the `add-endpoint` skill for the API (a filtered list route) and `new-component` for a search box wired to `RecipeService`. When code is done, run the `code-reviewer` subagent; the formatter + secret-guard hooks fire on their own; then smoke the search flow via the Playwright MCP. Follow `.claude/rules/`."
+   > *(Already have search? Swap in any small vertical slice — the point is one feature through every layer.)*
+
 2. **Watch the layers compose.** You should barely restate conventions — rules + skills carry them, the reviewer checks, hooks enforce, MCP smokes.
+
 3. **Observability tour:** with `aspire run` up, open the dashboard → **Traces**, and find one `GET /recipes` request. Confirm spans for **API → Postgres → cache**. Check `/health` reflects the real dependencies.
+
 4. **Verify** search works in the browser, tests green, review clean. Commit; note in your build log which layer earned its place (and any rule you'd move to a different layer).
 
 **If it breaks:** search returns everything → the filter isn't applied in the query; check the repository/EF `Where`. Trace missing spans → confirm ServiceDefaults is added in the project you're hitting.
@@ -185,13 +194,15 @@ Move the app from "works" to "shippable." Check what's already there before addi
 **Steps:**
 
 1. **`/clear`**, then:
-  
-  > "In `src/RecipeBox`, add pagination to the recipe list and proper loading / empty / error states everywhere data is fetched. Then do an accessibility sweep — form labels, focus order, color contrast, keyboard nav on list and detail. Follow `.claude/rules/frontend.md`. Plan first, implement, then `ng test`."
-  
+   
+   > "In `src/RecipeBox`, add pagination to the recipe list and proper loading / empty / error states everywhere data is fetched. Then do an accessibility sweep — form labels, focus order, color contrast, keyboard nav on list and detail. Follow `.claude/rules/frontend.md`. Plan first, implement, then `ng test`."
+
 2. **Verify like a user:**
-  - Throttle the network in browser dev tools → you should see loading states.
-  - Point at an empty DB (or filter to a category with nothing) → empty state, not a blank page.
-  - Stop the API (Ctrl+C the `api` resource) → the UI shows an error state, not a silent hang.
+   
+   - Throttle the network in browser dev tools → you should see loading states.
+   - Point at an empty DB (or filter to a category with nothing) → empty state, not a blank page.
+   - Stop the API (Ctrl+C the `api` resource) → the UI shows an error state, not a silent hang.
+
 3. **`ng test`** green from `src/RecipeBox`; commit.
 
 **If it breaks:** spinner never resolves → the loading flag isn't cleared in the error branch; make sure `finally`/`catch` resets it.
@@ -208,13 +219,16 @@ Bundle your `.claude/` work into one installable unit.
 **Steps:**
 
 1. **`/clear`**, then assemble it. ⚠️ Plugin/marketplace layout is the fastest-moving piece here — verify against the current plugins docs before finalizing.
-  
-  > "Package `.claude/` as a plugin: add `.claude-plugin/plugin.json` and a `marketplace.json` bundling the three skills (`add-endpoint`, `new-component`, `add-aspire-resource`), the three subagents (`code-reviewer`, `test-gap-analyzer`, `api-contract-checker`), and the hooks (`format.sh`, `secret-guard.sh`). Show me the manifests before writing. ⚠️ Verify the schema against the current Claude Code plugins docs."
-  
+   
+   > "Package `.claude/` as a plugin: add `.claude-plugin/plugin.json` and a `marketplace.json` bundling the three skills (`add-endpoint`, `new-component`, `add-aspire-resource`), the three subagents (`code-reviewer`, `test-gap-analyzer`, `api-contract-checker`), and the hooks (`format.sh`, `secret-guard.sh`). Show me the manifests before writing. ⚠️ Verify the schema against the current Claude Code plugins docs."
+
 2. **Install in a clean session** to prove it's real:
-  - `/plugin marketplace add Architect4Hire/ClaudeBox`
-  - `/plugin install recipebox@<marketplace-name>`
+   
+   - `/plugin marketplace add Architect4Hire/ClaudeBox`
+   - `/plugin install recipebox@<marketplace-name>`
+
 3. **Verify** each piece is available in that fresh session (skills fire, subagents listed, hooks present).
+
 4. **Commit** and tag `plugin-v1`.
 
 **If it breaks:** install fails → the manifest schema is off for your version; re-read the docs and fix `plugin.json`. Pieces don't load → paths inside the manifest must point at the real `.claude/` locations.
@@ -233,8 +247,8 @@ Run the same agent loop headless, emitting structured output another step can co
 
 1. **Install the SDK.** ⚠️ Confirm the package name from the docs — currently `@anthropic-ai/claude-agent-sdk` (Node) or `claude-agent-sdk` (Python).
 2. **Pick one useful job** and have Claude write it:
-  - **Seed generator** (recommended — you'll want data for the capstone): *"Write an Agent SDK script `tools/seed.mjs` that generates 12 realistic recipes as strict JSON matching the `POST /recipes` ViewModel — no prose, no code fences, JSON only — then POSTs them to the running API. Parse defensively (strip stray fences before JSON.parse)."*
-  - **or Drift scanner:** emit `{ "mismatches": [ ... ] }` comparing DTOs to Angular models (the headless twin of Day 3's subagent).
+   - **Seed generator** (recommended — you'll want data for the capstone): *"Write an Agent SDK script `tools/seed.mjs` that generates 12 realistic recipes as strict JSON matching the `POST /recipes` ViewModel — no prose, no code fences, JSON only — then POSTs them to the running API. Parse defensively (strip stray fences before JSON.parse)."*
+   - **or Drift scanner:** emit `{ "mismatches": [ ... ] }` comparing DTOs to Angular models (the headless twin of Day 3's subagent).
 3. **Run it** with `aspire run` up: `node tools/seed.mjs`. Confirm real output — and for the seeder, the recipes appearing in the browser.
 4. **Commit.**
 
@@ -253,11 +267,13 @@ Make the pipeline do the boring, reliable work — then produce deploy artifacts
 **Steps:**
 
 1. **`/clear`**, then add CI. ⚠️ Confirm the current Claude Code GitHub Action usage.
-  
-  > "Add a GitHub Actions workflow at `.github/workflows/ci.yml` that runs on every PR: `dotnet test`, `ng test` (headless), the `src/RecipeBox/e2e/recipe-flow.spec.ts` Playwright job, and a Claude Code review on changed files. Put any credentials in repo secrets, never in the YAML. Show me the workflow before writing. ⚠️ Verify the Claude Code Action reference against the current docs."
-  
+   
+   > "Add a GitHub Actions workflow at `.github/workflows/ci.yml` that runs on every PR: `dotnet test`, `ng test` (headless), the `src/RecipeBox/e2e/recipe-flow.spec.ts` Playwright job, and a Claude Code review on changed files. Put any credentials in repo secrets, never in the YAML. Show me the workflow before writing. ⚠️ Verify the Claude Code Action reference against the current docs."
+
 2. **Open a throwaway PR** (trivial change on a branch) and watch the checks run in the PR's Checks tab. Try `/security-review` locally on the branch too.
+
 3. **Deployment artifacts (don't deploy):** run `aspire publish` ⚠️ to emit a target (e.g., Docker Compose), read the AppHost's publishing manifest to see how `postgres`/`cache`/`api`/`web` map to deployable units, and commit the artifacts (or a `docs/deployment.md` note describing them).
+
 4. **Commit / merge** once green.
 
 **If it breaks:** review job fails on auth → credentials must be repo secrets referenced by the Action, per its docs. `aspire publish` unknown → the command/targets changed; check the deployment docs for the current invocation.
