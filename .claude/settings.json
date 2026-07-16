@@ -1,15 +1,13 @@
+
 {
-  "hooks": {
-    "PostToolUse": [
-      {
-        "matcher": "Edit|Write|MultiEdit",
-        "hooks": [
-          {
-            "type": "command",
-            "command": ".claude/hooks/format.sh"
-          }
-        ]
-      }
-    ]
-  }
+ "hooks": {
+   "PreToolUse": [
+     { "matcher": "Edit|Write|MultiEdit",
+       "hooks": [ { "type": "command", "command": ".claude/hooks/secret-guard.sh" } ] }
+   ],
+   "PostToolUse": [
+     { "matcher": "Edit|Write|MultiEdit",
+       "hooks": [ { "type": "command", "command": ".claude/hooks/format.sh" } ] }
+   ]
+ }
 }
