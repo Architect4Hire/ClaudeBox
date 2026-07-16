@@ -152,8 +152,10 @@ anyone asks). Ask what a reviewer would call the extra call: a rule, or bookkeep
     builder.Services.AddScoped<IRecipeDataLayer, RecipeDataLayer>();
     builder.Services.AddScoped<IRecipeBusiness, RecipeBusiness>();
     builder.Services.AddScoped<IRecipeFacade, RecipeFacade>();
-    builder.Services.AddValidatorsFromAssemblyContaining<CreateRecipeViewModelValidator>();
     ```
+    Validators need no registration of their own: `Program.cs` already calls
+    `AddValidatorsFromAssemblyContaining<Program>()`, which picks up every validator in the assembly.
+    Don't add a second `AddValidatorsFromAssemblyContaining` line per feature.
 
 11. **Cache backing.** Use the Aspire Redis client integration for the distributed cache (keyed to
     the AppHost `cache` resource) — no hardcoded connection details. Read-through + invalidate lives
