@@ -1,0 +1,103 @@
+- generic [ref=e2]:
+  - banner [ref=e3]:
+    - link "RecipeBox" [ref=e4] [cursor=pointer]:
+      - /url: /
+      - generic [ref=e5]: 🍲
+  - main [ref=e7]:
+    - generic [ref=e8]:
+      - generic [ref=e9]:
+        - generic [ref=e10]:
+          - heading "Recipes" [level=1] [ref=e11]
+          - paragraph [ref=e12]: Everything in your box, ready to cook.
+        - link "New recipe" [ref=e13] [cursor=pointer]:
+          - /url: /recipes/new
+          - generic [ref=e14]: +
+          - text: New recipe
+      - generic [ref=e16]:
+        - generic [ref=e17]: Search by ingredient
+        - generic [ref=e18]:
+          - generic: 🔍
+          - searchbox "Search by ingredient" [ref=e19]
+      - navigation "Filter recipes by category" [ref=e22]:
+        - button "All" [active] [pressed] [ref=e23] [cursor=pointer]
+        - button "Breakfast" [ref=e24] [cursor=pointer]
+        - button "Dessert" [ref=e25] [cursor=pointer]
+        - button "Main Course" [ref=e26] [cursor=pointer]
+        - button "Soup" [ref=e27] [cursor=pointer]
+      - list [ref=e146]:
+        - listitem [ref=e166]:
+          - link [ref=e167] [cursor=pointer]:
+            - /url: /recipes/4
+            - generic [ref=e168]: 🍽️
+            - generic [ref=e170]:
+              - heading "Chocolate Brownies" [level=2] [ref=e171]
+              - paragraph [ref=e172]: Dense, fudgy brownies with a crackly top.
+              - generic [ref=e173]:
+                - generic [ref=e174]:
+                  - term [ref=e175]: Serves
+                  - definition [ref=e176]: "9"
+                - generic [ref=e177]:
+                  - term [ref=e178]: Ingredients
+                  - definition [ref=e179]: "5"
+                - generic [ref=e180]:
+                  - term [ref=e181]: Steps
+                  - definition [ref=e182]: "3"
+              - list [ref=e183]:
+                - listitem [ref=e184]: Dessert
+        - listitem [ref=e185]:
+          - link [ref=e186] [cursor=pointer]:
+            - /url: /recipes/2
+            - generic [ref=e187]: 🍽️
+            - generic [ref=e189]:
+              - heading "Classic Pancakes" [level=2] [ref=e190]
+              - paragraph [ref=e191]: Fluffy stovetop pancakes for a lazy weekend breakfast.
+              - generic [ref=e192]:
+                - generic [ref=e193]:
+                  - term [ref=e194]: Serves
+                  - definition [ref=e195]: "4"
+                - generic [ref=e196]:
+                  - term [ref=e197]: Ingredients
+                  - definition [ref=e198]: "5"
+                - generic [ref=e199]:
+                  - term [ref=e200]: Steps
+                  - definition [ref=e201]: "3"
+              - list [ref=e202]:
+                - listitem [ref=e203]: Breakfast
+        - listitem [ref=e204]:
+          - link [ref=e205] [cursor=pointer]:
+            - /url: /recipes/1
+            - generic [ref=e206]: 🍽️
+            - generic [ref=e208]:
+              - heading "Spaghetti Aglio e Olio" [level=2] [ref=e209]
+              - paragraph [ref=e210]: "A fast Roman classic: garlic gently fried in good olive oil, tossed with spaghetti and chilli."
+              - generic [ref=e211]:
+                - generic [ref=e212]:
+                  - term [ref=e213]: Serves
+                  - definition [ref=e214]: "2"
+                - generic [ref=e215]:
+                  - term [ref=e216]: Ingredients
+                  - definition [ref=e217]: "5"
+                - generic [ref=e218]:
+                  - term [ref=e219]: Steps
+                  - definition [ref=e220]: "3"
+              - list [ref=e221]:
+                - listitem [ref=e222]: Main Course
+        - listitem [ref=e147]:
+          - link [ref=e148] [cursor=pointer]:
+            - /url: /recipes/3
+            - generic [ref=e149]: 🍽️
+            - generic [ref=e151]:
+              - heading "Tomato Basil Soup" [level=2] [ref=e152]
+              - paragraph [ref=e153]: A silky, slow-simmered tomato soup finished with fresh basil.
+              - generic [ref=e154]:
+                - generic [ref=e155]:
+                  - term [ref=e156]: Serves
+                  - definition [ref=e157]: "4"
+                - generic [ref=e158]:
+                  - term [ref=e159]: Ingredients
+                  - definition [ref=e160]: "5"
+                - generic [ref=e161]:
+                  - term [ref=e162]: Steps
+                  - definition [ref=e163]: "3"
+              - list [ref=e164]:
+                - listitem [ref=e165]: Soup

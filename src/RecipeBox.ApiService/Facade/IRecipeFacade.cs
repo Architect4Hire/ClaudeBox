@@ -10,7 +10,13 @@ namespace RecipeBox.ApiService.Facade;
 /// </summary>
 public interface IRecipeFacade
 {
-    Task<IReadOnlyList<RecipeSummaryServiceModel>> ListAsync(string? category, CancellationToken ct);
+    /// <summary>
+    /// Validates the filter and returns the matching recipe summaries; its criteria combine with AND.
+    /// Throws <see cref="FluentValidation.ValidationException"/> on an invalid filter. Only the wholly
+    /// unfiltered list is cached.
+    /// </summary>
+    Task<IReadOnlyList<RecipeSummaryServiceModel>> ListAsync(
+        RecipeFilterViewModel filter, CancellationToken ct);
 
     /// <summary><c>null</c> when no recipe has the given id (the controller turns that into a 404).</summary>
     Task<RecipeDetailServiceModel?> GetByIdAsync(int id, CancellationToken ct);

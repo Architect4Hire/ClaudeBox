@@ -16,10 +16,13 @@ public class RecipeBusiness(IRecipeRepository repository) : IRecipeBusiness
 {
     private readonly IRecipeRepository _repository = repository;
 
-    // The list is projected to summary service models in SQL by the data layer (counts without
-    // materializing rows), so there is nothing to map here — pass it straight through.
-    public Task<IReadOnlyList<RecipeSummaryServiceModel>> ListAsync(string? category, CancellationToken ct) =>
-        _repository.ListAsync(category, ct);
+    // Translate the validated view model into normalized domain criteria — the same VM→domain step the
+    // write paths do with ToEntity(), and what keeps view models from reaching the data layer. The
+    // results need no mapping back: the data layer projects them to summary service models in SQL
+    // (counts without materializing rows), so they pass straight through.
+    public Task<IReadOnlyList<RecipeSummaryServiceModel>> ListAsync(
+        RecipeFilterViewModel filter, CancellationToken ct) =>
+        _repository.ListAsync(filter.ToFilter(), ct);
 
     public async Task<RecipeDetailServiceModel?> GetByIdAsync(int id, CancellationToken ct)
     {

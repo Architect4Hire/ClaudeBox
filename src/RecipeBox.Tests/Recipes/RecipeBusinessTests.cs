@@ -35,18 +35,34 @@ public class RecipeBusinessTests
         Steps: new List<UpdateStepViewModel> { new(1, "Knead"), new(2, "Prove"), new(3, "Bake") });
 
     [Fact]
-    public async Task ListAsync_passes_repository_summaries_through()
+    public async Task ListAsync_translates_the_view_model_and_passes_summaries_through()
     {
         var summaries = new List<RecipeSummaryServiceModel>
         {
             new(1, "Soup", "warm", 4, new[] { "Main" }, 3, 2),
         };
-        _repository.ListAsync("Main", Arg.Any<CancellationToken>()).Returns(summaries);
+        _repository.ListAsync(new RecipeFilter("Main", null), Arg.Any<CancellationToken>())
+            .Returns(summaries);
 
-        var result = await _sut.ListAsync("Main", CancellationToken.None);
+        var result = await _sut.ListAsync(
+            new RecipeFilterViewModel { Category = "Main" }, CancellationToken.None);
 
         Assert.Same(summaries, result);
-        await _repository.Received(1).ListAsync("Main", Arg.Any<CancellationToken>());
+        // The repository is reached with domain criteria, never the view model.
+        await _repository.Received(1)
+            .ListAsync(new RecipeFilter("Main", null), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task ListAsync_normalizes_the_filter_before_it_reaches_the_repository()
+    {
+        // Trimmed, and blank → null ("any"), so the data layer never has to defend against either.
+        await _sut.ListAsync(
+            new RecipeFilterViewModel { Category = "   ", Ingredient = "  flour  " },
+            CancellationToken.None);
+
+        await _repository.Received(1)
+            .ListAsync(new RecipeFilter(null, "flour"), Arg.Any<CancellationToken>());
     }
 
     [Fact]

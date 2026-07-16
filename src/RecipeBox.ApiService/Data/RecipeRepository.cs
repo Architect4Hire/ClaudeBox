@@ -20,13 +20,28 @@ public class RecipeRepository(RecipeDbContext db) : IRecipeRepository
     /// </summary>
     public const string RecipeNameUniqueIndex = "IX_Recipes_Name_Lower";
 
-    public async Task<IReadOnlyList<RecipeSummaryServiceModel>> ListAsync(string? category, CancellationToken ct)
+    public async Task<IReadOnlyList<RecipeSummaryServiceModel>> ListAsync(
+        RecipeFilter filter, CancellationToken ct)
     {
         var query = _db.Recipes.AsNoTracking();
 
-        if (!string.IsNullOrWhiteSpace(category))
+        // The filters compose with AND: each active one narrows the query further. Both arrive
+        // normalized (trimmed, blank → null) from RecipeFilterViewModel.ToFilter.
+        if (filter.Category is not null)
         {
-            query = query.Where(r => r.Categories.Any(c => c.Name == category));
+            query = query.Where(r => r.Categories.Any(c => c.Name == filter.Category));
+        }
+
+        if (filter.Ingredient is not null)
+        {
+            // Case-insensitive substring over ingredient names, via the same portable LOWER(...) idiom
+            // as ExistsByNameAsync: EF.Functions.ILike would read better but is Npgsql-only, and the
+            // repository/endpoint tests run on SQLite. Npgsql renders Contains as strpos(...) > 0, so
+            // '%' and '_' in the term are matched literally rather than as wildcards — pinned against
+            // the real provider by RecipeRepositoryPostgresTests, since the SQLite suite can only
+            // attest to SQLite's own translation.
+            var term = filter.Ingredient.ToLower();
+            query = query.Where(r => r.Ingredients.Any(i => i.Name.ToLower().Contains(term)));
         }
 
         // Project counts in SQL straight into the summary service model, so a list view never

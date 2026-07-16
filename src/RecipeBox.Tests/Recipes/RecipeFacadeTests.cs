@@ -24,12 +24,16 @@ public class RecipeFacadeTests
     private readonly IRecipeBusiness _business = Substitute.For<IRecipeBusiness>();
     private readonly IValidator<CreateRecipeViewModel> _createValidator = new CreateRecipeViewModelValidator();
     private readonly IValidator<UpdateRecipeViewModel> _updateValidator = new UpdateRecipeViewModelValidator();
+    private readonly IValidator<RecipeFilterViewModel> _filterValidator = new RecipeFilterViewModelValidator();
     private readonly IDistributedCache _cache =
         new MemoryDistributedCache(Options.Create(new MemoryDistributedCacheOptions()));
     private readonly RecipeFacade _sut;
 
     public RecipeFacadeTests() =>
-        _sut = new RecipeFacade(_business, _createValidator, _updateValidator, _cache);
+        _sut = new RecipeFacade(_business, _createValidator, _updateValidator, _filterValidator, _cache);
+
+    /// <summary>The unfiltered list request — the only one the facade caches.</summary>
+    private static readonly RecipeFilterViewModel NoFilter = new();
 
     private static CreateRecipeViewModel ValidViewModel(string name) => new(
         Name: name,
@@ -60,44 +64,76 @@ public class RecipeFacadeTests
         };
         await _cache.SetStringAsync(ListAllKey, JsonSerializer.Serialize(cached));
 
-        var result = await _sut.ListAsync(null, CancellationToken.None);
+        var result = await _sut.ListAsync(NoFilter, CancellationToken.None);
 
         Assert.Single(result);
         Assert.Equal("Cached", result[0].Name);
-        await _business.DidNotReceive().ListAsync(Arg.Any<string?>(), Arg.Any<CancellationToken>());
+        await _business.DidNotReceive()
+            .ListAsync(Arg.Any<RecipeFilterViewModel>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]
     public async Task ListAsync_calls_business_and_populates_cache_on_miss()
     {
-        _business.ListAsync(null, Arg.Any<CancellationToken>()).Returns(new List<RecipeSummaryServiceModel>
+        _business.ListAsync(NoFilter, Arg.Any<CancellationToken>()).Returns(new List<RecipeSummaryServiceModel>
         {
             new(5, "FromDb", null, 4, new[] { "Main" }, 2, 3),
         });
 
-        var first = await _sut.ListAsync(null, CancellationToken.None);
-        var second = await _sut.ListAsync(null, CancellationToken.None);
+        var first = await _sut.ListAsync(NoFilter, CancellationToken.None);
+        var second = await _sut.ListAsync(NoFilter, CancellationToken.None);
 
         Assert.Equal("FromDb", first[0].Name);
         Assert.Equal("FromDb", second[0].Name);
         // Second call is served from cache: business is hit exactly once.
-        await _business.Received(1).ListAsync(null, Arg.Any<CancellationToken>());
+        await _business.Received(1).ListAsync(NoFilter, Arg.Any<CancellationToken>());
     }
 
     [Fact]
     public async Task ListAsync_with_category_bypasses_cache()
     {
-        _business.ListAsync("Dessert", Arg.Any<CancellationToken>()).Returns(new List<RecipeSummaryServiceModel>
+        var filter = new RecipeFilterViewModel { Category = "Dessert" };
+        _business.ListAsync(filter, Arg.Any<CancellationToken>()).Returns(new List<RecipeSummaryServiceModel>
         {
             new(9, "Cake", null, 8, new[] { "Dessert" }, 4, 5),
         });
 
-        await _sut.ListAsync("Dessert", CancellationToken.None);
-        await _sut.ListAsync("Dessert", CancellationToken.None);
+        await _sut.ListAsync(filter, CancellationToken.None);
+        await _sut.ListAsync(filter, CancellationToken.None);
 
         // No caching for filtered lists — business is called every time.
-        await _business.Received(2).ListAsync("Dessert", Arg.Any<CancellationToken>());
+        await _business.Received(2).ListAsync(filter, Arg.Any<CancellationToken>());
         Assert.Null(await _cache.GetStringAsync(ListAllKey));
+    }
+
+    [Fact]
+    public async Task ListAsync_with_ingredient_bypasses_cache()
+    {
+        var filter = new RecipeFilterViewModel { Ingredient = "flour" };
+        _business.ListAsync(filter, Arg.Any<CancellationToken>()).Returns(new List<RecipeSummaryServiceModel>
+        {
+            new(9, "Bread", null, 8, new[] { "Baking" }, 4, 5),
+        });
+
+        await _sut.ListAsync(filter, CancellationToken.None);
+        await _sut.ListAsync(filter, CancellationToken.None);
+
+        // An ingredient search is open-ended free text; caching per term would fill the cache with
+        // near-unrepeatable keys, so it always goes to the business layer.
+        await _business.Received(2).ListAsync(filter, Arg.Any<CancellationToken>());
+        Assert.Null(await _cache.GetStringAsync(ListAllKey));
+    }
+
+    [Fact]
+    public async Task ListAsync_rejects_an_over_long_ingredient_term()
+    {
+        var filter = new RecipeFilterViewModel { Ingredient = new string('x', 201) };
+
+        await Assert.ThrowsAsync<ValidationException>(
+            () => _sut.ListAsync(filter, CancellationToken.None));
+
+        await _business.DidNotReceive()
+            .ListAsync(Arg.Any<RecipeFilterViewModel>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]
@@ -215,20 +251,21 @@ public class RecipeFacadeTests
     }
 
     [Fact]
-    public async Task ListAsync_with_whitespace_category_uses_cached_unfiltered_path()
+    public async Task ListAsync_with_whitespace_only_filters_uses_cached_unfiltered_path()
     {
-        _business.ListAsync(null, Arg.Any<CancellationToken>()).Returns(new List<RecipeSummaryServiceModel>
+        var blank = new RecipeFilterViewModel { Category = "   ", Ingredient = "  " };
+        _business.ListAsync(blank, Arg.Any<CancellationToken>()).Returns(new List<RecipeSummaryServiceModel>
         {
             new(1, "FromDb", null, 4, new[] { "Main" }, 2, 3),
         });
 
-        var result = await _sut.ListAsync("   ", CancellationToken.None);
+        var result = await _sut.ListAsync(blank, CancellationToken.None);
 
+        // Whitespace is "no filter", so this takes the cached unfiltered path rather than bypassing.
+        // (Turning the blank strings into null is the business layer's job — see RecipeBusinessTests —
+        // so the facade still hands the view model down as it arrived.)
         Assert.Equal("FromDb", result[0].Name);
-        // Whitespace is "no filter": the business layer is queried with null and the result is cached,
-        // never queried with the raw whitespace string.
-        await _business.Received(1).ListAsync(null, Arg.Any<CancellationToken>());
-        await _business.DidNotReceive().ListAsync("   ", Arg.Any<CancellationToken>());
+        await _business.Received(1).ListAsync(blank, Arg.Any<CancellationToken>());
         Assert.NotNull(await _cache.GetStringAsync(ListAllKey));
     }
 
@@ -237,17 +274,17 @@ public class RecipeFacadeTests
     {
         const string corrupt = "{ this is not valid json";
         await _cache.SetStringAsync(ListAllKey, corrupt);
-        _business.ListAsync(null, Arg.Any<CancellationToken>()).Returns(new List<RecipeSummaryServiceModel>
+        _business.ListAsync(NoFilter, Arg.Any<CancellationToken>()).Returns(new List<RecipeSummaryServiceModel>
         {
             new(5, "FromDb", null, 4, new[] { "Main" }, 2, 3),
         });
 
-        var result = await _sut.ListAsync(null, CancellationToken.None);
+        var result = await _sut.ListAsync(NoFilter, CancellationToken.None);
 
         // A corrupt cache entry must not throw: it is treated as a miss and served from the business
         // layer, which then overwrites the bad entry.
         Assert.Equal("FromDb", Assert.Single(result).Name);
-        await _business.Received(1).ListAsync(null, Arg.Any<CancellationToken>());
+        await _business.Received(1).ListAsync(NoFilter, Arg.Any<CancellationToken>());
         Assert.NotEqual(corrupt, await _cache.GetStringAsync(ListAllKey));
     }
 

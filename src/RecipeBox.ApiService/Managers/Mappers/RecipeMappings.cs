@@ -17,6 +17,17 @@ public static class RecipeMappings
 {
     // ── ViewModel → domain (business layer) ──────────────────────────────────────────────────────
 
+    /// <summary>
+    /// Translates the list request's view model into the domain criteria the data layer queries with,
+    /// normalizing as it goes: each filter is trimmed, and a blank one becomes null ("any"). Doing it
+    /// here means the data layer never sees a view model, and never has to re-trim.
+    /// </summary>
+    public static RecipeFilter ToFilter(this RecipeFilterViewModel viewModel) =>
+        new(Normalize(viewModel.Category), Normalize(viewModel.Ingredient));
+
+    private static string? Normalize(string? value) =>
+        string.IsNullOrWhiteSpace(value) ? null : value.Trim();
+
     public static Recipe ToEntity(this CreateRecipeViewModel viewModel) =>
         new()
         {

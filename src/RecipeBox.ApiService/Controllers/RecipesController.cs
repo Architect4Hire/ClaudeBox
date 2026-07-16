@@ -16,12 +16,15 @@ public class RecipesController(IRecipeFacade facade) : ControllerBase
 {
     private readonly IRecipeFacade _facade = facade;
 
-    /// <summary>Lists recipe summaries, optionally filtered to a single category.</summary>
+    /// <summary>
+    /// Lists recipe summaries, optionally narrowed by category and/or ingredient — e.g.
+    /// <c>?category=Dessert&amp;ingredient=flour</c> for desserts containing flour.
+    /// </summary>
     [HttpGet]
     public async Task<ActionResult<IReadOnlyList<RecipeSummaryServiceModel>>> List(
-        [FromQuery] string? category, CancellationToken ct)
+        [FromQuery] RecipeFilterViewModel filter, CancellationToken ct)
     {
-        return Ok(await _facade.ListAsync(category, ct));
+        return Ok(await _facade.ListAsync(filter, ct));
     }
 
     /// <summary>Gets one recipe with its ingredients and ordered steps.</summary>

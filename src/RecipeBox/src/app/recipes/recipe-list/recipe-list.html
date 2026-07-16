@@ -8,6 +8,8 @@
   </a>
 </header>
 
+<app-recipe-search [term]="(term$ | async) ?? ''" (termChange)="onSearchTermChanged($event)" />
+
 @if (categories$ | async; as categories) {
   @if (categories.length) {
     <app-category-filter
@@ -49,6 +51,8 @@
         </li>
       }
     </ul>
+  } @else if (hasFilter$ | async) {
+    <p class="empty">No recipes match that filter. Try a different ingredient or category.</p>
   } @else {
     <p class="empty">No recipes yet. Create the first one.</p>
   }

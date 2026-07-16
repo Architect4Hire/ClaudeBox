@@ -1,0 +1,23 @@
+<div class="recipe-search">
+  <label class="recipe-search__label" for="ingredient-search">Search by ingredient</label>
+
+  <div class="recipe-search__control">
+    <span class="recipe-search__icon" aria-hidden="true">🔍</span>
+
+    <input
+      id="ingredient-search"
+      type="search"
+      class="recipe-search__input"
+      placeholder="e.g. flour"
+      autocomplete="off"
+      [value]="term()"
+      (input)="onInput($any($event.target).value)"
+    />
+
+    @if (term()) {
+      <button type="button" class="recipe-search__clear" aria-label="Clear search" (click)="clear()">
+        ×
+      </button>
+    }
+  </div>
+</div>

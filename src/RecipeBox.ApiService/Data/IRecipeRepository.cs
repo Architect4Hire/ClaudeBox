@@ -11,8 +11,12 @@ namespace RecipeBox.ApiService.Data;
 /// </summary>
 public interface IRecipeRepository
 {
-    /// <summary>Summary rows, optionally filtered to recipes in the named category.</summary>
-    Task<IReadOnlyList<RecipeSummaryServiceModel>> ListAsync(string? category, CancellationToken ct);
+    /// <summary>
+    /// Summary rows matching <paramref name="filter"/> — its criteria combine with AND, and a
+    /// <see cref="RecipeFilter.None"/> filter returns every recipe. Expects an already-normalized
+    /// filter (see <c>RecipeFilterViewModel.ToFilter</c>).
+    /// </summary>
+    Task<IReadOnlyList<RecipeSummaryServiceModel>> ListAsync(RecipeFilter filter, CancellationToken ct);
 
     /// <summary>
     /// One recipe with its ingredients, steps (ordered by <see cref="Step.Order"/>), categories, and

@@ -17,16 +17,18 @@ public class RecipeFacade(
     IRecipeBusiness business,
     IValidator<CreateRecipeViewModel> createValidator,
     IValidator<UpdateRecipeViewModel> updateValidator,
+    IValidator<RecipeFilterViewModel> filterValidator,
     IDistributedCache cache) : IRecipeFacade
 {
     private readonly IRecipeBusiness _business = business;
     private readonly IValidator<CreateRecipeViewModel> _createValidator = createValidator;
     private readonly IValidator<UpdateRecipeViewModel> _updateValidator = updateValidator;
+    private readonly IValidator<RecipeFilterViewModel> _filterValidator = filterValidator;
     private readonly IDistributedCache _cache = cache;
 
-    // The unfiltered list is the only cached list. A create/update can now attach categories, so it
-    // can affect category-filtered lists too — but those are never cached (they bypass to the business
-    // layer, see ListAsync), so invalidating this one unfiltered key on write is still sufficient.
+    // The unfiltered list is the only cached list. A create/update can affect filtered lists too (it
+    // can attach categories and change ingredients) — but those are never cached (they bypass to the
+    // business layer, see ListAsync), so invalidating this one unfiltered key on write is sufficient.
     private const string ListAllKey = "recipes:list:all";
 
     private static string DetailKey(int id) => $"recipe:{id}";
@@ -36,12 +38,21 @@ public class RecipeFacade(
         AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(5),
     };
 
-    public async Task<IReadOnlyList<RecipeSummaryServiceModel>> ListAsync(string? category, CancellationToken ct)
+    public async Task<IReadOnlyList<RecipeSummaryServiceModel>> ListAsync(
+        RecipeFilterViewModel filter, CancellationToken ct)
     {
-        // Category-filtered queries are not cached (see ListAllKey note).
-        if (!string.IsNullOrWhiteSpace(category))
+        await _filterValidator.ValidateAndThrowAsync(filter, ct);
+
+        // The view model goes down to business exactly as it arrived: normalizing it (trim, blank →
+        // null) is the business layer's VM→domain step, not the facade's. Nothing is lost by waiting —
+        // HasFilter already treats a blank filter as "no filter", so a whitespace-only request takes
+        // the cached unfiltered path below and gets the same result a truly absent filter would.
+        //
+        // Filtered queries are not cached (see ListAllKey note) — an ingredient search is open-ended
+        // free text, so caching per term would fill the cache with near-unrepeatable keys.
+        if (filter.HasFilter)
         {
-            return await _business.ListAsync(category, ct);
+            return await _business.ListAsync(filter, ct);
         }
 
         var cached = await GetCachedAsync<List<RecipeSummaryServiceModel>>(ListAllKey, ct);
@@ -50,7 +61,7 @@ public class RecipeFacade(
             return cached;
         }
 
-        var models = await _business.ListAsync(null, ct);
+        var models = await _business.ListAsync(filter, ct);
         await SetCachedAsync(ListAllKey, models, ct);
         return models;
     }

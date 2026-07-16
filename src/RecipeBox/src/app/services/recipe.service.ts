@@ -21,9 +21,19 @@ export class RecipeService {
   /** Same-origin base; the real API host is proxied in by Aspire's injected config. */
   private readonly recipesUrl = `${environment.apiBaseUrl}/recipes`;
 
-  /** GET api/recipes — recipe summaries, optionally filtered to a single category. */
-  list(category?: string): Observable<RecipeSummaryDto[]> {
-    const params = category ? new HttpParams().set('category', category) : undefined;
+  /**
+   * GET api/recipes — recipe summaries, optionally narrowed by category and/or ingredient. The two
+   * filters combine with AND: passing both returns recipes in that category that also contain that
+   * ingredient. `ingredient` is matched as a case-insensitive substring of an ingredient name.
+   */
+  list(category?: string, ingredient?: string): Observable<RecipeSummaryDto[]> {
+    let params = new HttpParams();
+    if (category) {
+      params = params.set('category', category);
+    }
+    if (ingredient) {
+      params = params.set('ingredient', ingredient);
+    }
     return this.http.get<RecipeSummaryDto[]>(this.recipesUrl, { params });
   }
 

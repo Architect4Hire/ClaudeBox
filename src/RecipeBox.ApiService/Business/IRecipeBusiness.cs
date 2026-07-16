@@ -10,7 +10,12 @@ namespace RecipeBox.ApiService.Business;
 /// </summary>
 public interface IRecipeBusiness
 {
-    Task<IReadOnlyList<RecipeSummaryServiceModel>> ListAsync(string? category, CancellationToken ct);
+    /// <summary>
+    /// Translates the validated filter view model into domain criteria and returns the matching recipe
+    /// summaries. The filter's criteria combine with AND.
+    /// </summary>
+    Task<IReadOnlyList<RecipeSummaryServiceModel>> ListAsync(
+        RecipeFilterViewModel filter, CancellationToken ct);
 
     Task<RecipeDetailServiceModel?> GetByIdAsync(int id, CancellationToken ct);
 

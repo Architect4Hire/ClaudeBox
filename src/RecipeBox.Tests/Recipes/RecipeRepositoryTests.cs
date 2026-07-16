@@ -40,6 +40,18 @@ public class RecipeRepositoryTests : IDisposable
             .ToList(),
     };
 
+    /// <summary>Replaces the generated "Ing1..." lines with named ingredients, for the search tests.</summary>
+    private static Recipe WithIngredients(Recipe recipe, params string[] names)
+    {
+        recipe.Ingredients.Clear();
+        foreach (var name in names)
+        {
+            recipe.Ingredients.Add(new Ingredient { Name = name, Quantity = 1 });
+        }
+
+        return recipe;
+    }
+
     /// <summary>Re-points a recipe at a specific category instance, so several can share one row.</summary>
     private static Recipe WithCategory(Recipe recipe, Category category)
     {
@@ -70,7 +82,7 @@ public class RecipeRepositoryTests : IDisposable
             Recipe("Bread", "Baking", ingredients: 5, steps: 4));
         var sut = new RecipeRepository(NewContext());
 
-        var result = await sut.ListAsync(null, CancellationToken.None);
+        var result = await sut.ListAsync(RecipeFilter.None, CancellationToken.None);
 
         Assert.Equal(new[] { "Bread", "Soup" }, result.Select(r => r.Name).ToArray());
         var bread = result[0];
@@ -87,9 +99,91 @@ public class RecipeRepositoryTests : IDisposable
             Recipe("Bread", "Baking", 5, 4));
         var sut = new RecipeRepository(NewContext());
 
-        var result = await sut.ListAsync("Baking", CancellationToken.None);
+        var result = await sut.ListAsync(new RecipeFilter("Baking", null), CancellationToken.None);
 
         Assert.Equal("Bread", Assert.Single(result).Name);
+    }
+
+    // ── Ingredient search ────────────────────────────────────────────────────────────────────────
+
+    [Fact]
+    public async Task ListAsync_filters_by_ingredient_ignoring_case()
+    {
+        await SeedAsync(
+            WithIngredients(Recipe("Bread", "Baking", 0, 4), "Flour", "Yeast"),
+            WithIngredients(Recipe("Soup", "Mains", 0, 3), "Carrot"));
+        var sut = new RecipeRepository(NewContext());
+
+        // The stored name is "Flour"; a lowercase term must still match it.
+        var result = await sut.ListAsync(new RecipeFilter(null, "flour"), CancellationToken.None);
+
+        Assert.Equal("Bread", Assert.Single(result).Name);
+    }
+
+    [Fact]
+    public async Task ListAsync_matches_an_ingredient_on_a_partial_name()
+    {
+        await SeedAsync(WithIngredients(Recipe("Bread", "Baking", 0, 4), "Plain Flour"));
+        var sut = new RecipeRepository(NewContext());
+
+        // Substring, not prefix or exact: "flo" sits in the middle of "Plain Flour".
+        var result = await sut.ListAsync(new RecipeFilter(null, "flo"), CancellationToken.None);
+
+        Assert.Equal("Bread", Assert.Single(result).Name);
+    }
+
+    [Fact]
+    public async Task ListAsync_combines_category_and_ingredient_with_and()
+    {
+        // Bread and Meringue share one Category instance: seeding two rows named "Baking" would trip
+        // the unique index on category name.
+        var baking = new Category { Name = "Baking" };
+        await SeedAsync(
+            WithIngredients(WithCategory(Recipe("Bread", "Baking", 0, 4), baking), "Flour"),
+            // Same ingredient, different category — excluded by the category half of the filter.
+            WithIngredients(Recipe("Pasta", "Mains", 0, 4), "Flour"),
+            // Same category, different ingredient — excluded by the ingredient half.
+            WithIngredients(WithCategory(Recipe("Meringue", "Baking", 0, 4), baking), "Egg White"));
+        var sut = new RecipeRepository(NewContext());
+
+        var result = await sut.ListAsync(new RecipeFilter("Baking", "flour"), CancellationToken.None);
+
+        Assert.Equal("Bread", Assert.Single(result).Name);
+    }
+
+    [Fact]
+    public async Task ListAsync_returns_empty_when_no_ingredient_matches()
+    {
+        await SeedAsync(WithIngredients(Recipe("Bread", "Baking", 0, 4), "Flour"));
+        var sut = new RecipeRepository(NewContext());
+
+        var result = await sut.ListAsync(new RecipeFilter(null, "saffron"), CancellationToken.None);
+
+        Assert.Empty(result);
+    }
+
+    [Fact]
+    public async Task ListAsync_counts_are_unaffected_by_the_ingredient_filter()
+    {
+        // The summary counts every ingredient on a matched recipe, not just the ones that matched.
+        await SeedAsync(WithIngredients(Recipe("Bread", "Baking", 0, 4), "Flour", "Yeast", "Salt"));
+        var sut = new RecipeRepository(NewContext());
+
+        var result = await sut.ListAsync(new RecipeFilter(null, "flour"), CancellationToken.None);
+
+        Assert.Equal(3, Assert.Single(result).IngredientCount);
+    }
+
+    [Fact]
+    public async Task ListAsync_treats_wildcards_in_the_term_literally()
+    {
+        // Guards the LIKE-injection footgun: '%' must match a literal '%', not "anything".
+        await SeedAsync(WithIngredients(Recipe("Bread", "Baking", 0, 4), "Flour"));
+        var sut = new RecipeRepository(NewContext());
+
+        var result = await sut.ListAsync(new RecipeFilter(null, "%"), CancellationToken.None);
+
+        Assert.Empty(result);
     }
 
     [Fact]
@@ -322,7 +416,7 @@ public class RecipeRepositoryTests : IDisposable
             Recipe("Bread", "Baking", 5, 4));
         var sut = new RecipeRepository(NewContext());
 
-        var result = await sut.ListAsync("NoSuchCategory", CancellationToken.None);
+        var result = await sut.ListAsync(new RecipeFilter("NoSuchCategory", null), CancellationToken.None);
 
         Assert.Empty(result);
     }

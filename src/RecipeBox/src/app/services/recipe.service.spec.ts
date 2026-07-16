@@ -61,6 +61,32 @@ describe('RecipeService', () => {
     req.flush([]);
   });
 
+  it('list(undefined, ingredient) sets only the ingredient query param', () => {
+    service.list(undefined, 'flour').subscribe();
+
+    const req = httpMock.expectOne((r) => r.url === '/api/recipes');
+    expect(req.request.params.get('ingredient')).toBe('flour');
+    expect(req.request.params.has('category')).toBe(false);
+    req.flush([]);
+  });
+
+  it('list(category, ingredient) sets both query params', () => {
+    service.list('Dessert', 'flour').subscribe();
+
+    const req = httpMock.expectOne((r) => r.url === '/api/recipes');
+    expect(req.request.params.get('category')).toBe('Dessert');
+    expect(req.request.params.get('ingredient')).toBe('flour');
+    req.flush([]);
+  });
+
+  it('list() omits blank filters rather than sending empty params', () => {
+    service.list('', '').subscribe();
+
+    const req = httpMock.expectOne((r) => r.url === '/api/recipes');
+    expect(req.request.params.keys().length).toBe(0);
+    req.flush([]);
+  });
+
   it('getById() GETs api/recipes/{id}', () => {
     const detail: RecipeDetailDto = {
       id: 7,

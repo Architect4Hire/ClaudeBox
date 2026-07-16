@@ -65,6 +65,77 @@ public class RecipesEndpointTests
         Assert.Equal("Soup", Assert.Single(recipes!).Name);
     }
 
+    /// <summary>A sample recipe with a specific ingredient line, for the ingredient-search tests.</summary>
+    private static Recipe RecipeWithIngredient(string name, string category, string ingredient)
+    {
+        var recipe = SampleRecipe(name, category);
+        recipe.Ingredients.Clear();
+        recipe.Ingredients.Add(new Ingredient { Name = ingredient, Quantity = 1, Unit = "cups" });
+        return recipe;
+    }
+
+    [Fact]
+    public async Task List_filters_by_ingredient()
+    {
+        await using var factory = new RecipeApiFactory();
+        await factory.SeedAsync(db =>
+        {
+            db.Recipes.Add(RecipeWithIngredient("Bread", "Baking", "Plain Flour"));
+            db.Recipes.Add(RecipeWithIngredient("Soup", "Mains", "Carrot"));
+            return Task.CompletedTask;
+        });
+        var client = factory.CreateClient();
+
+        // Lowercase partial term against the stored "Plain Flour".
+        var recipes = await client.GetFromJsonAsync<List<RecipeSummaryServiceModel>>(
+            "/api/recipes?ingredient=flour");
+
+        Assert.NotNull(recipes);
+        Assert.Equal("Bread", Assert.Single(recipes!).Name);
+    }
+
+    [Fact]
+    public async Task List_combines_category_and_ingredient_filters()
+    {
+        await using var factory = new RecipeApiFactory();
+        await factory.SeedAsync(db =>
+        {
+            // Bread and Meringue must share one Category instance — seeding two rows named "Baking"
+            // would trip the unique index on category name.
+            var baking = new Category { Name = "Baking" };
+            var bread = RecipeWithIngredient("Bread", "Baking", "Flour");
+            var meringue = RecipeWithIngredient("Meringue", "Baking", "Egg White");
+            bread.Categories.Clear();
+            bread.Categories.Add(baking);
+            meringue.Categories.Clear();
+            meringue.Categories.Add(baking);
+
+            db.Recipes.Add(bread);
+            db.Recipes.Add(RecipeWithIngredient("Pasta", "Mains", "Flour"));
+            db.Recipes.Add(meringue);
+            return Task.CompletedTask;
+        });
+        var client = factory.CreateClient();
+
+        var recipes = await client.GetFromJsonAsync<List<RecipeSummaryServiceModel>>(
+            "/api/recipes?category=Baking&ingredient=flour");
+
+        // Only the recipe satisfying both filters comes back.
+        Assert.NotNull(recipes);
+        Assert.Equal("Bread", Assert.Single(recipes!).Name);
+    }
+
+    [Fact]
+    public async Task List_returns_400_for_an_over_long_ingredient_term()
+    {
+        await using var factory = new RecipeApiFactory();
+        var client = factory.CreateClient();
+
+        var response = await client.GetAsync($"/api/recipes?ingredient={new string('x', 201)}");
+
+        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+    }
+
     [Fact]
     public async Task GetById_returns_recipe_with_ordered_steps()
     {
