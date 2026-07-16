@@ -51,4 +51,39 @@ export class RecipeService {
   update(id: number, request: UpdateRecipeRequest): Observable<RecipeDetailDto> {
     return this.http.put<RecipeDetailDto>(`${this.recipesUrl}/${id}`, request);
   }
+
+  /**
+   * GET api/recipes/{id}/image — the address of a recipe's image, for an `<img src>`.
+   *
+   * The API returns `hasImage` rather than a URL, so composing the address is this service's job:
+   * it already owns where the recipes resource lives, and a component building the path itself would
+   * be the one place in the app that knows the API's shape. Check `hasImage` before using this — for
+   * a recipe without one the URL is a 404.
+   *
+   * Not an Observable: it's a string for the browser to fetch, not a request we make. The response
+   * carries an ETag, so the browser revalidates and a 304 costs nothing — which is why this URL is
+   * stable rather than cache-busted.
+   */
+  imageUrl(id: number): string {
+    return `${this.recipesUrl}/${id}/image`;
+  }
+
+  /**
+   * PUT api/recipes/{id}/image — sets a recipe's image, replacing any existing one.
+   *
+   * Multipart rather than JSON, and the only method here that isn't. The API ignores the declared
+   * content type and filename and reads the format from the bytes, so nothing is gained by dressing
+   * the part up. Rejects with 400 if the file isn't a JPEG, PNG, or WebP, or is over 5MB.
+   */
+  uploadImage(id: number, file: File): Observable<void> {
+    const form = new FormData();
+    form.append('file', file);
+    // No explicit Content-Type: the browser must set it, because only it knows the multipart boundary.
+    return this.http.put<void>(`${this.recipesUrl}/${id}/image`, form);
+  }
+
+  /** DELETE api/recipes/{id}/image — removes a recipe's image. */
+  deleteImage(id: number): Observable<void> {
+    return this.http.delete<void>(`${this.recipesUrl}/${id}/image`);
+  }
 }

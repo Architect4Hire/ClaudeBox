@@ -4,8 +4,23 @@
       <article class="recipe">
         <a class="back" routerLink="/">← All recipes</a>
 
+        <!-- Decorative, like the list card's: the <h1> below already names the dish, so an alt would
+             have a screen reader announce it twice. -->
+        @if (state.recipe.hasImage) {
+          <img
+            class="recipe__banner"
+            [src]="imageUrl(state.recipe.id)"
+            alt=""
+            aria-hidden="true"
+          />
+        }
+
         <header class="recipe__header">
-          <span class="recipe__hero" aria-hidden="true">🍲</span>
+          <!-- The emoji tile is the stand-in for a missing photo; with a banner above, it would just
+               be a second, smaller picture of the same thing. -->
+          @if (!state.recipe.hasImage) {
+            <span class="recipe__hero" aria-hidden="true">🍲</span>
+          }
           <div class="recipe__heading">
             <h1>{{ state.recipe.name }}</h1>
             @if (state.recipe.description) {
@@ -53,10 +68,17 @@
       </article>
     }
     @case ('not-found') {
-      <p class="empty">Recipe not found. <a routerLink="/">Back to all recipes</a></p>
+      <p class="empty" role="status">Recipe not found. <a routerLink="/">Back to all recipes</a></p>
+    }
+    @case ('error') {
+      <div class="empty empty--error" role="alert">
+        <p class="empty__message">Something went wrong loading this recipe.</p>
+        <button type="button" class="empty__retry" (click)="onRetry()">Try again</button>
+        <p class="empty__aside"><a routerLink="/">Back to all recipes</a></p>
+      </div>
     }
     @default {
-      <p class="empty">Loading recipe…</p>
+      <p class="empty" role="status">Loading recipe…</p>
     }
   }
 }

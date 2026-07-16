@@ -17,13 +17,22 @@ var recipesdb = postgres.AddDatabase("recipesdb")
 // Local Redis container used as the distributed cache for read-through API caching.
 var cache = builder.AddRedis("cache");
 
+// Blob storage for recipe images. RunAsEmulator pins this to an Azurite container, so it stays a
+// local backing resource like postgres and cache — the Azure-shaped API is the emulator's surface,
+// not a cloud dependency. RunAsEmulator also creates the container on startup, so nothing else has to.
+var recipeImages = builder.AddAzureStorage("storage")
+    .RunAsEmulator(azurite => azurite.WithDataVolume())  // persist blobs across restarts, as postgres does
+    .AddBlobContainer("recipe-images");
+
 // ASP.NET Core API. Gets its connections via service wiring (WithReference),
 // and waits for its backing resources to be ready before it starts.
 var api = builder.AddProject<Projects.RecipeBox_ApiService>("api")
     .WithReference(recipesdb)
     .WithReference(cache)
+    .WithReference(recipeImages)
     .WaitFor(postgres)
-    .WaitFor(cache);
+    .WaitFor(cache)
+    .WaitFor(recipeImages);
 
 // Angular front end. Registered here so Aspire owns it; the actual app is scaffolded later
 // (Prompt 3). The API base URL is injected via service discovery (WithReference), never hardcoded.

@@ -41,4 +41,26 @@ public interface IRecipeFacade
     /// id (the controller turns that into a 404).
     /// </summary>
     Task<bool> DeleteAsync(int id, CancellationToken ct);
+
+    /// <summary>
+    /// The given recipe's image, ready to stream, or <c>null</c> when there are no bytes to serve (the
+    /// controller turns that into a 404). Not cached — see the note in the implementation. The caller
+    /// owns the returned stream.
+    /// </summary>
+    Task<RecipeImageServiceModel?> GetImageAsync(int id, CancellationToken ct);
+
+    /// <summary>
+    /// Validates and stores the given recipe's image, then invalidates its cached copies. Throws
+    /// <see cref="FluentValidation.ValidationException"/> when the upload is empty, too large, or not
+    /// a supported image. Returns <c>false</c> when no recipe has that id (the controller turns that
+    /// into a 404).
+    /// </summary>
+    Task<bool> SetImageAsync(int id, UploadRecipeImageViewModel viewModel, CancellationToken ct);
+
+    /// <summary>
+    /// Removes the given recipe's image and invalidates its cached copies. Nothing is validated — the
+    /// id arrives as a route value. Returns <c>false</c> when no recipe has that id or it had no image
+    /// (the controller turns that into a 404).
+    /// </summary>
+    Task<bool> RemoveImageAsync(int id, CancellationToken ct);
 }

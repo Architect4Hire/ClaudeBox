@@ -12,10 +12,10 @@
   --rb-border: #ece1d4;
   --rb-border-strong: #ddccb8;
 
-  /* Ink */
+  /* Ink — every value clears 4.5:1 on --rb-bg, --rb-surface and --rb-surface-muted */
   --rb-text: #2c2320;
-  --rb-text-muted: #857468;
-  --rb-text-subtle: #a2938a;
+  --rb-text-muted: #6f5f54;
+  --rb-text-subtle: #78695f;
 
   /* Warm brand — paprika + amber */
   --rb-primary: #e05a2b;
@@ -23,7 +23,15 @@
   --rb-primary-soft: #fbeadf;
   --rb-primary-ink: #9c3b16;
   --rb-accent: #f2a63d;
+
+  /*
+   * Two ramps, and the distinction is load-bearing. --rb-gradient is decorative: it may only sit
+   * behind large display type or nothing at all (card band, wordmark). White text over it fails WCAG
+   * AA at every stop (2.04:1 / 3.71:1 / 4.38:1), so any control with a white label uses the darkened
+   * --rb-gradient-cta instead, whose stops are all >= 4.89:1 against white.
+   */
   --rb-gradient: linear-gradient(135deg, #f2a63d 0%, #e05a2b 55%, #d64545 100%);
+  --rb-gradient-cta: linear-gradient(135deg, #c4481d 0%, #a8471f 55%, #a32f3f 100%);
 
   /* Feedback */
   --rb-danger: #c0243a;
@@ -94,6 +102,84 @@ a {
 ::selection {
   background: var(--rb-primary-soft);
   color: var(--rb-primary-ink);
+}
+
+/*
+ * Available to assistive tech, invisible on screen. Used for labels that the visual design conveys
+ * through position or placeholder instead of visible text. Not `display: none` — that would take the
+ * element out of the accessibility tree, which is the opposite of the point.
+ */
+.rb-visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/*
+ * Retryable error panel. Lives here rather than in a component sheet because the list and the detail
+ * view present a failed load identically — and should keep doing so, since the user is meant to read
+ * them as the same kind of event. Pairs with each view's own `.empty` block.
+ */
+.empty--error {
+  border-style: solid;
+  border-color: #f5c6cf;
+  background: var(--rb-danger-soft);
+}
+
+.empty__message {
+  margin: 0 0 1rem;
+  color: var(--rb-danger);
+  font-weight: 500;
+}
+
+.empty__retry {
+  padding: 0.5rem 1.1rem;
+  border: 1px solid var(--rb-danger);
+  border-radius: var(--rb-r-pill);
+  background: var(--rb-surface);
+  color: var(--rb-danger);
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background var(--rb-fast) var(--rb-ease), color var(--rb-fast) var(--rb-ease);
+}
+
+.empty__retry:hover {
+  background: var(--rb-danger);
+  color: #fff;
+}
+
+.empty__aside {
+  margin: 1rem 0 0;
+  font-size: 0.9rem;
+}
+
+/* Skip link — hidden until focused, then pinned over the sticky header. */
+.rb-skip-link {
+  position: absolute;
+  left: 0.5rem;
+  top: -100%;
+  z-index: 100;
+  padding: 0.7rem 1.1rem;
+  border-radius: var(--rb-r-sm);
+  background: var(--rb-surface);
+  color: var(--rb-primary-ink);
+  font-weight: 600;
+  text-decoration: none;
+  box-shadow: var(--rb-shadow-lg);
+  transition: top var(--rb-fast) var(--rb-ease);
+}
+
+.rb-skip-link:focus-visible {
+  top: 0.5rem;
 }
 
 @media (prefers-reduced-motion: reduce) {

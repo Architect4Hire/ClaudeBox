@@ -23,6 +23,9 @@ public class RecipeDbContext(DbContextOptions<RecipeDbContext> options) : DbCont
         {
             recipe.Property(r => r.Name).IsRequired().HasMaxLength(200);
             recipe.Property(r => r.Description).HasMaxLength(2000);
+            // A blob key, not a URL (see Recipe.ImageBlobName). Comfortably wider than the
+            // "recipes/{id}/{guid}.jpg" keys the business layer mints.
+            recipe.Property(r => r.ImageBlobName).HasMaxLength(200);
 
             // Recipe names are unique case-insensitively. That's enforced by a LOWER(Name) functional
             // unique index (IX_Recipes_Name_Lower) created via raw SQL in the AddRecipeNameUniqueIndex

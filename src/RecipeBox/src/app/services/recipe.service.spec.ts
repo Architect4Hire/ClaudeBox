@@ -39,6 +39,7 @@ describe('RecipeService', () => {
         categories: ['Breakfast'],
         ingredientCount: 5,
         stepCount: 3,
+        hasImage: false,
       },
     ];
 
@@ -97,6 +98,7 @@ describe('RecipeService', () => {
       steps: [{ order: 1, instruction: 'Boil' }],
       categories: ['Dinner'],
       tags: ['vegan'],
+      hasImage: false,
     };
 
     let received: RecipeDetailDto | undefined;
@@ -128,6 +130,7 @@ describe('RecipeService', () => {
       steps: [{ order: 1, instruction: 'Toast it' }],
       categories: [],
       tags: [],
+      hasImage: false,
     };
 
     let received: RecipeDetailDto | undefined;
@@ -160,6 +163,7 @@ describe('RecipeService', () => {
       steps: [{ order: 1, instruction: 'Feed' }, { order: 2, instruction: 'Bake' }],
       categories: [],
       tags: [],
+      hasImage: false,
     };
 
     let received: RecipeDetailDto | undefined;
@@ -171,5 +175,35 @@ describe('RecipeService', () => {
     req.flush(updated);
 
     expect(received).toEqual(updated);
+  });
+
+  it('imageUrl() builds the same-origin address of a recipe image', () => {
+    // A plain string, not a request: it goes in an <img src> for the browser to fetch. Relative, so
+    // it resolves against whatever origin the app is served from — the API host is the proxy's
+    // business, never this app's.
+    expect(service.imageUrl(7)).toBe('/api/recipes/7/image');
+  });
+
+  it('uploadImage() PUTs the file as multipart form data', () => {
+    const file = new File([new Uint8Array([0xff, 0xd8, 0xff])], 'photo.jpg', { type: 'image/jpeg' });
+
+    service.uploadImage(7, file).subscribe();
+
+    const req = httpMock.expectOne('/api/recipes/7/image');
+    expect(req.request.method).toBe('PUT');
+    expect(req.request.body).toBeInstanceOf(FormData);
+    expect((req.request.body as FormData).get('file')).toBe(file);
+    // The browser has to set Content-Type itself — only it knows the multipart boundary, and setting
+    // it by hand produces a body the server can't parse.
+    expect(req.request.headers.get('Content-Type')).toBeNull();
+    req.flush(null);
+  });
+
+  it('deleteImage() DELETEs the recipe image', () => {
+    service.deleteImage(7).subscribe();
+
+    const req = httpMock.expectOne('/api/recipes/7/image');
+    expect(req.request.method).toBe('DELETE');
+    req.flush(null);
   });
 });

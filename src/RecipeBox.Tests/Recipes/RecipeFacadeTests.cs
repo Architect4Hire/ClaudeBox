@@ -1,3 +1,4 @@
+using System.Text;
 using System.Text.Json;
 using FluentValidation;
 using Microsoft.Extensions.Caching.Distributed;
@@ -25,12 +26,15 @@ public class RecipeFacadeTests
     private readonly IValidator<CreateRecipeViewModel> _createValidator = new CreateRecipeViewModelValidator();
     private readonly IValidator<UpdateRecipeViewModel> _updateValidator = new UpdateRecipeViewModelValidator();
     private readonly IValidator<RecipeFilterViewModel> _filterValidator = new RecipeFilterViewModelValidator();
+    private readonly IValidator<UploadRecipeImageViewModel> _uploadImageValidator =
+        new UploadRecipeImageViewModelValidator();
     private readonly IDistributedCache _cache =
         new MemoryDistributedCache(Options.Create(new MemoryDistributedCacheOptions()));
     private readonly RecipeFacade _sut;
 
     public RecipeFacadeTests() =>
-        _sut = new RecipeFacade(_business, _createValidator, _updateValidator, _filterValidator, _cache);
+        _sut = new RecipeFacade(
+            _business, _createValidator, _updateValidator, _filterValidator, _uploadImageValidator, _cache);
 
     /// <summary>The unfiltered list request — the only one the facade caches.</summary>
     private static readonly RecipeFilterViewModel NoFilter = new();
@@ -53,14 +57,14 @@ public class RecipeFacadeTests
         id, name, "Reworked", 6,
         new List<IngredientServiceModel> { new("Rye", 3, "cups") },
         new List<StepServiceModel> { new(1, "Knead"), new(2, "Bake") },
-        new List<string>(), new List<string>());
+        new List<string>(), new List<string>(), HasImage: false);
 
     [Fact]
     public async Task ListAsync_returns_cached_result_without_calling_business_on_hit()
     {
         var cached = new List<RecipeSummaryServiceModel>
         {
-            new(1, "Cached", null, 2, new[] { "Main" }, 1, 1),
+            new(1, "Cached", null, 2, new[] { "Main" }, 1, 1, false),
         };
         await _cache.SetStringAsync(ListAllKey, JsonSerializer.Serialize(cached));
 
@@ -77,7 +81,7 @@ public class RecipeFacadeTests
     {
         _business.ListAsync(NoFilter, Arg.Any<CancellationToken>()).Returns(new List<RecipeSummaryServiceModel>
         {
-            new(5, "FromDb", null, 4, new[] { "Main" }, 2, 3),
+            new(5, "FromDb", null, 4, new[] { "Main" }, 2, 3, false),
         });
 
         var first = await _sut.ListAsync(NoFilter, CancellationToken.None);
@@ -95,7 +99,7 @@ public class RecipeFacadeTests
         var filter = new RecipeFilterViewModel { Category = "Dessert" };
         _business.ListAsync(filter, Arg.Any<CancellationToken>()).Returns(new List<RecipeSummaryServiceModel>
         {
-            new(9, "Cake", null, 8, new[] { "Dessert" }, 4, 5),
+            new(9, "Cake", null, 8, new[] { "Dessert" }, 4, 5, false),
         });
 
         await _sut.ListAsync(filter, CancellationToken.None);
@@ -112,7 +116,7 @@ public class RecipeFacadeTests
         var filter = new RecipeFilterViewModel { Ingredient = "flour" };
         _business.ListAsync(filter, Arg.Any<CancellationToken>()).Returns(new List<RecipeSummaryServiceModel>
         {
-            new(9, "Bread", null, 8, new[] { "Baking" }, 4, 5),
+            new(9, "Bread", null, 8, new[] { "Baking" }, 4, 5, false),
         });
 
         await _sut.ListAsync(filter, CancellationToken.None);
@@ -190,7 +194,7 @@ public class RecipeFacadeTests
                 77, "Pancakes", "Fluffy", 4,
                 new List<IngredientServiceModel> { new("Flour", 2, "cups") },
                 new List<StepServiceModel> { new(1, "Mix"), new(2, "Cook") },
-                new List<string>(), new List<string>()));
+                new List<string>(), new List<string>(), HasImage: false));
 
         var result = await _sut.CreateAsync(ValidViewModel("Pancakes"), CancellationToken.None);
 
@@ -256,7 +260,7 @@ public class RecipeFacadeTests
         var blank = new RecipeFilterViewModel { Category = "   ", Ingredient = "  " };
         _business.ListAsync(blank, Arg.Any<CancellationToken>()).Returns(new List<RecipeSummaryServiceModel>
         {
-            new(1, "FromDb", null, 4, new[] { "Main" }, 2, 3),
+            new(1, "FromDb", null, 4, new[] { "Main" }, 2, 3, false),
         });
 
         var result = await _sut.ListAsync(blank, CancellationToken.None);
@@ -276,7 +280,7 @@ public class RecipeFacadeTests
         await _cache.SetStringAsync(ListAllKey, corrupt);
         _business.ListAsync(NoFilter, Arg.Any<CancellationToken>()).Returns(new List<RecipeSummaryServiceModel>
         {
-            new(5, "FromDb", null, 4, new[] { "Main" }, 2, 3),
+            new(5, "FromDb", null, 4, new[] { "Main" }, 2, 3, false),
         });
 
         var result = await _sut.ListAsync(NoFilter, CancellationToken.None);
@@ -293,7 +297,7 @@ public class RecipeFacadeTests
     {
         await _cache.SetStringAsync(ListAllKey, JsonSerializer.Serialize(new List<RecipeSummaryServiceModel>
         {
-            new(7, "Doomed", null, 2, Array.Empty<string>(), 1, 1),
+            new(7, "Doomed", null, 2, Array.Empty<string>(), 1, 1, false),
         }));
         await _cache.SetStringAsync("recipe:7", JsonSerializer.Serialize(DetailModel(7, "Doomed")));
         _business.DeleteAsync(7, Arg.Any<CancellationToken>()).Returns(true);
@@ -311,7 +315,7 @@ public class RecipeFacadeTests
     {
         var cachedList = JsonSerializer.Serialize(new List<RecipeSummaryServiceModel>
         {
-            new(1, "Untouched", null, 2, Array.Empty<string>(), 1, 1),
+            new(1, "Untouched", null, 2, Array.Empty<string>(), 1, 1, false),
         });
         await _cache.SetStringAsync(ListAllKey, cachedList);
         _business.DeleteAsync(7, Arg.Any<CancellationToken>()).Returns(false);
@@ -321,5 +325,112 @@ public class RecipeFacadeTests
         Assert.False(result);
         // Nothing was deleted, so the cached list is still accurate — evicting it would be needless churn.
         Assert.Equal(cachedList, await _cache.GetStringAsync(ListAllKey));
+    }
+
+    // ── Images ───────────────────────────────────────────────────────────────────────────────────
+
+    private static UploadRecipeImageViewModel ValidUpload() =>
+        new(new MemoryStream([0xFF, 0xD8, 0xFF, 0xE0, 0x00, 0x10, 0x4A, 0x46, 0x49, 0x46, 0x00, 0x01]), 12);
+
+    private async Task PrimeCacheAsync(int id, string name)
+    {
+        await _cache.SetStringAsync(ListAllKey, JsonSerializer.Serialize(new List<RecipeSummaryServiceModel>
+        {
+            new(id, name, null, 2, Array.Empty<string>(), 1, 1, HasImage: false),
+        }));
+        await _cache.SetStringAsync($"recipe:{id}", JsonSerializer.Serialize(DetailModel(id, name)));
+    }
+
+    [Fact]
+    public async Task SetImageAsync_evicts_both_cached_shapes_so_the_new_image_is_visible_at_once()
+    {
+        await PrimeCacheAsync(7, "Pancakes");
+        _business.SetImageAsync(7, Arg.Any<UploadRecipeImageViewModel>(), Arg.Any<CancellationToken>())
+            .Returns(true);
+
+        var result = await _sut.SetImageAsync(7, ValidUpload(), CancellationToken.None);
+
+        Assert.True(result);
+        // The bug this exists to catch: both cached shapes carry HasImage=false, and without eviction
+        // they'd keep saying so for the whole TTL. The client would never request an image it's been
+        // told doesn't exist, so the upload would look like it silently did nothing — with the upload
+        // itself, the blob write, and every other test still perfectly green.
+        Assert.Null(await _cache.GetStringAsync("recipe:7"));
+        Assert.Null(await _cache.GetStringAsync(ListAllKey));
+    }
+
+    [Fact]
+    public async Task SetImageAsync_leaves_the_cache_intact_when_the_recipe_is_missing()
+    {
+        await PrimeCacheAsync(7, "Ghost");
+        var cachedList = await _cache.GetStringAsync(ListAllKey);
+        _business.SetImageAsync(7, Arg.Any<UploadRecipeImageViewModel>(), Arg.Any<CancellationToken>())
+            .Returns(false);
+
+        Assert.False(await _sut.SetImageAsync(7, ValidUpload(), CancellationToken.None));
+        Assert.Equal(cachedList, await _cache.GetStringAsync(ListAllKey));
+    }
+
+    [Fact]
+    public async Task SetImageAsync_rejects_a_file_that_is_not_an_image_before_reaching_business()
+    {
+        var notAnImage = new UploadRecipeImageViewModel(
+            new MemoryStream(Encoding.UTF8.GetBytes("<script>alert(1)</script>")), 25);
+
+        await Assert.ThrowsAsync<ValidationException>(
+            () => _sut.SetImageAsync(7, notAnImage, CancellationToken.None));
+
+        await _business.DidNotReceive().SetImageAsync(
+            Arg.Any<int>(), Arg.Any<UploadRecipeImageViewModel>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task SetImageAsync_rejects_an_oversized_file_before_reaching_business()
+    {
+        var tooBig = new UploadRecipeImageViewModel(
+            new MemoryStream([0xFF, 0xD8, 0xFF, 0xE0, 0x00, 0x10, 0x4A, 0x46, 0x49, 0x46, 0x00, 0x01]),
+            UploadRecipeImageViewModelValidator.MaxBytes + 1);
+
+        await Assert.ThrowsAsync<ValidationException>(
+            () => _sut.SetImageAsync(7, tooBig, CancellationToken.None));
+
+        await _business.DidNotReceive().SetImageAsync(
+            Arg.Any<int>(), Arg.Any<UploadRecipeImageViewModel>(), Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task RemoveImageAsync_evicts_both_cached_shapes()
+    {
+        await PrimeCacheAsync(7, "Pancakes");
+        _business.RemoveImageAsync(7, Arg.Any<CancellationToken>()).Returns(true);
+
+        Assert.True(await _sut.RemoveImageAsync(7, CancellationToken.None));
+        // The mirror of the upload case: a stale HasImage=true would point the client at bytes that are
+        // now gone, so the card would render a broken image rather than its placeholder.
+        Assert.Null(await _cache.GetStringAsync("recipe:7"));
+        Assert.Null(await _cache.GetStringAsync(ListAllKey));
+    }
+
+    [Fact]
+    public async Task RemoveImageAsync_leaves_the_cache_intact_when_there_was_no_image()
+    {
+        await PrimeCacheAsync(7, "Pancakes");
+        var cachedList = await _cache.GetStringAsync(ListAllKey);
+        _business.RemoveImageAsync(7, Arg.Any<CancellationToken>()).Returns(false);
+
+        Assert.False(await _sut.RemoveImageAsync(7, CancellationToken.None));
+        Assert.Equal(cachedList, await _cache.GetStringAsync(ListAllKey));
+    }
+
+    [Fact]
+    public async Task GetImageAsync_is_not_cached()
+    {
+        var image = new RecipeImageServiceModel(new MemoryStream([1, 2, 3]), "image/jpeg", "\"etag-1\"");
+        _business.GetImageAsync(7, Arg.Any<CancellationToken>()).Returns(image);
+
+        Assert.Same(image, await _sut.GetImageAsync(7, CancellationToken.None));
+        // A cached stream would be readable exactly once and then serve zero bytes to everyone after —
+        // freshness for the image comes from its ETag instead.
+        Assert.Null(await _cache.GetStringAsync("recipe:7:image"));
     }
 }

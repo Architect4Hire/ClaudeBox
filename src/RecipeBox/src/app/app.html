@@ -1,3 +1,10 @@
+<!--
+  First tab stop on every page: lets keyboard users jump the header instead of tabbing through the
+  brand link on each navigation. href (not routerLink) is deliberate — this moves focus within the
+  current page rather than routing anywhere.
+-->
+<a class="rb-skip-link" href="#main-content">Skip to main content</a>
+
 <header class="app-header">
   <a class="app-header__brand" routerLink="/">
     <span class="app-header__logo" aria-hidden="true">🍲</span>
@@ -5,6 +12,8 @@
   </a>
 </header>
 
-<main class="app-main">
+<!-- tabindex="-1" so the skip link can actually move focus here; without it the browser scrolls but
+     focus stays behind, and the next Tab resumes from the header. -->
+<main class="app-main" id="main-content" tabindex="-1">
   <router-outlet />
 </main>

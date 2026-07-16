@@ -20,11 +20,32 @@ public class RecipeRepository(RecipeDbContext db) : IRecipeRepository
     /// </summary>
     public const string RecipeNameUniqueIndex = "IX_Recipes_Name_Lower";
 
-    // Wrapped in EfDataTransaction so callers get a commit/rollback handle without an EF type on the
-    // surface. Both SaveChangesAsync and ExecuteDeleteAsync enlist in the context's current
-    // transaction automatically, so nothing else here has to know one is open.
-    public async Task<IDataTransaction> BeginTransactionAsync(CancellationToken ct) =>
-        new EfDataTransaction(await _db.Database.BeginTransactionAsync(ct));
+    // The execution strategy has to own the transaction, not sit inside one. Aspire's Npgsql
+    // integration turns on retry-on-failure, and NpgsqlRetryingExecutionStrategy throws outright on a
+    // transaction the caller opened itself ("does not support user-initiated transactions") — it
+    // can't replay a unit whose boundaries it doesn't control. So the strategy opens the transaction,
+    // runs the operation, and commits; a transient fault re-runs the whole thing, rather than
+    // retrying one statement inside a transaction that has already failed.
+    //
+    // Both SaveChangesAsync and ExecuteDeleteAsync enlist in the context's current transaction
+    // automatically, so nothing the operation calls has to know one is open.
+    public async Task<T> ExecuteInTransactionAsync<T>(
+        Func<CancellationToken, Task<T>> operation, CancellationToken ct)
+    {
+        var strategy = _db.Database.CreateExecutionStrategy();
+
+        return await strategy.ExecuteAsync(async () =>
+        {
+            // Disposal without the commit below rolls back, so a throw on any leg of the operation
+            // leaves the store untouched.
+            await using var transaction = await _db.Database.BeginTransactionAsync(ct);
+
+            var result = await operation(ct);
+
+            await transaction.CommitAsync(ct);
+            return result;
+        });
+    }
 
     public async Task<IReadOnlyList<RecipeSummaryServiceModel>> ListAsync(
         RecipeFilter filter, CancellationToken ct)
@@ -62,7 +83,11 @@ public class RecipeRepository(RecipeDbContext db) : IRecipeRepository
                 r.Servings,
                 r.Categories.Select(c => c.Name).ToList(),
                 r.Ingredients.Count,
-                r.Steps.Count))
+                r.Steps.Count,
+                // The blob name is tested, not selected: the list only needs to know an image exists.
+                // A null check renders as IS NOT NULL on every provider, so unlike the LOWER(...) idiom
+                // above this one carries no portability caveat.
+                r.ImageBlobName != null))
             .ToListAsync(ct);
     }
 
@@ -209,6 +234,34 @@ public class RecipeRepository(RecipeDbContext db) : IRecipeRepository
         _db.Recipes.Remove(existing);
         await _db.SaveChangesAsync(ct);
         return true;
+    }
+
+    // Projects the single column rather than loading the recipe: the image endpoints only need the key.
+    // A missing recipe and a recipe with no image both yield null here, which is what the callers want.
+    public Task<string?> GetImageBlobNameAsync(int id, CancellationToken ct) =>
+        _db.Recipes
+            .AsNoTracking()
+            .Where(r => r.Id == id)
+            .Select(r => r.ImageBlobName)
+            .FirstOrDefaultAsync(ct);
+
+    public async Task<ImageAssignment> SetImageBlobNameAsync(int id, string? blobName, CancellationToken ct)
+    {
+        // Tracked load with no includes: this writes one scalar, so pulling the collections would buy
+        // nothing. EF sends an UPDATE touching only ImageBlobName, which is why an image upload can't
+        // clobber a concurrent edit of the recipe's name or steps.
+        var existing = await _db.Recipes.FirstOrDefaultAsync(r => r.Id == id, ct);
+        if (existing is null)
+        {
+            return ImageAssignment.RecipeNotFound;
+        }
+
+        var previous = existing.ImageBlobName;
+        existing.ImageBlobName = blobName;
+        await _db.SaveChangesAsync(ct);
+
+        // Report the superseded blob so the data layer can reap it — this row is the only record of it.
+        return new ImageAssignment(true, previous);
     }
 
     // Categories exist only as a by-product of the recipes that name them (see ResolveCategoriesAsync),

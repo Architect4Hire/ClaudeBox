@@ -12,11 +12,23 @@ namespace RecipeBox.ApiService.Data;
 public interface IRecipeRepository
 {
     /// <summary>
-    /// Opens a transaction over this repository's connection, for a caller composing several
-    /// operations that must land together or not at all. Every subsequent call on this repository
-    /// enlists in it until the returned transaction is committed or disposed.
+    /// Runs <paramref name="operation"/> as one atomic unit, for a caller composing several repository
+    /// calls that must land together or not at all. Every call made on this repository inside
+    /// <paramref name="operation"/> enlists in the same transaction; it commits when the operation
+    /// returns, and rolls back if it throws.
     /// </summary>
-    Task<IDataTransaction> BeginTransactionAsync(CancellationToken ct);
+    /// <remarks>
+    /// A callback rather than a "begin" that hands back a transaction, and that shape is forced by the
+    /// database rather than chosen. Aspire's Npgsql integration enables retry-on-failure, and its
+    /// execution strategy refuses to run inside a transaction the caller opened itself — it can't
+    /// retry what it doesn't own the boundaries of. Passing the whole unit in lets the strategy
+    /// re-run all of it on a transient fault, which is the only way the two can coexist.
+    /// <para>Beware what that implies: <paramref name="operation"/> may run more than once, so it must
+    /// be safe to repeat. Everything the operation does through this repository is inside the
+    /// transaction and is rolled back before a retry — but anything it does to another store is not.
+    /// Keep those outside.</para>
+    /// </remarks>
+    Task<T> ExecuteInTransactionAsync<T>(Func<CancellationToken, Task<T>> operation, CancellationToken ct);
 
     /// <summary>
     /// Summary rows matching <paramref name="filter"/> — its criteria combine with AND, and a
@@ -55,6 +67,20 @@ public interface IRecipeRepository
     /// <c>false</c> when no recipe has that id.
     /// </summary>
     Task<bool> DeleteAsync(int id, CancellationToken ct);
+
+    /// <summary>
+    /// The blob name of the given recipe's image, or <c>null</c> if it has none — or if no recipe has
+    /// that id. The two cases are deliberately not distinguished: every caller treats "there are no
+    /// bytes to serve" and "there is no recipe" the same way.
+    /// </summary>
+    Task<string?> GetImageBlobNameAsync(int id, CancellationToken ct);
+
+    /// <summary>
+    /// Points the given recipe at <paramref name="blobName"/>, or at no image when it's <c>null</c>,
+    /// and reports what the row named before (see <see cref="ImageAssignment"/>). Touches only that
+    /// column, so it can't disturb a concurrent edit of the recipe's content.
+    /// </summary>
+    Task<ImageAssignment> SetImageBlobNameAsync(int id, string? blobName, CancellationToken ct);
 
     /// <summary>
     /// Deletes every category no recipe references any more, and returns how many were removed.

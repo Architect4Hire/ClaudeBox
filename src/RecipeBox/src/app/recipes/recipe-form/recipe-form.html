@@ -1,88 +1,237 @@
-<form class="recipe-form" [formGroup]="form" (ngSubmit)="submit()">
-  <h1>{{ isEdit() ? 'Edit recipe' : 'New recipe' }}</h1>
+@if (loading()) {
+  <p class="form-loading" role="status">Loading recipe…</p>
+} @else {
+  <form class="recipe-form" [formGroup]="form" (ngSubmit)="submit()">
+    <h1>{{ isEdit() ? 'Edit recipe' : 'New recipe' }}</h1>
 
-  @if (errorMessage(); as message) {
-    <p class="error" role="alert">{{ message }}</p>
-  }
-
-  <label class="field">
-    <span>Name</span>
-    <input type="text" formControlName="name" />
-    @if (form.controls.name.touched && form.controls.name.invalid) {
-      <small class="field__error">A name is required (max 200 characters).</small>
+    @if (errorMessage(); as message) {
+      <p class="error" role="alert">{{ message }}</p>
     }
-  </label>
 
-  <label class="field">
-    <span>Description</span>
-    <textarea formControlName="description" rows="3"></textarea>
-  </label>
+    <!--
+      Throughout: aria-describedby wires each error message to its input, and aria-invalid marks the
+      input itself. Without the pairing the error is just text sitting nearby — sighted users see the
+      association from the layout, screen reader users get nothing when focus lands on the field.
+      Both bind to null when valid so the attributes vanish rather than reading as "invalid: false".
+    -->
+    <label class="field">
+      <span>Name</span>
+      <input
+        type="text"
+        formControlName="name"
+        [attr.aria-invalid]="showError(form.controls.name) ? 'true' : null"
+        [attr.aria-describedby]="showError(form.controls.name) ? 'name-error' : null"
+      />
+      @if (showError(form.controls.name)) {
+        <small id="name-error" class="field__error">A name is required (max 200 characters).</small>
+      }
+    </label>
 
-  <label class="field field--narrow">
-    <span>Servings</span>
-    <input type="number" formControlName="servings" min="1" />
-    @if (form.controls.servings.touched && form.controls.servings.invalid) {
-      <small class="field__error">Servings must be at least 1.</small>
-    }
-  </label>
+    <label class="field">
+      <span>Description</span>
+      <textarea formControlName="description" rows="3"></textarea>
+    </label>
 
-  <fieldset class="group" formArrayName="ingredients">
-    <legend>Ingredients</legend>
-    @for (ingredient of ingredients.controls; track ingredient; let i = $index) {
-      <div class="row" [formGroupName]="i">
-        <input class="row__grow" type="text" placeholder="Name" formControlName="name" />
-        <input class="row__qty" type="number" placeholder="Qty" formControlName="quantity" min="0" />
-        <input class="row__unit" type="text" placeholder="Unit" formControlName="unit" />
-        <button type="button" class="row__remove" (click)="removeIngredient(i)" [disabled]="ingredients.length === 1">
-          Remove
-        </button>
+    <!--
+      The photo sits outside the reactive form on purpose: it isn't part of the recipe's JSON and is
+      saved by its own request after this form's, since a new recipe has no id to upload against
+      until it's been created. Hence a plain input with a `for`/`id` label rather than the wrapping
+      `label.field` the other fields use — the preview and buttons can't live inside a label.
+    -->
+    <div class="field">
+      <label for="recipe-image">Photo</label>
+      <div class="image-field">
+        <span class="image-field__preview" aria-hidden="true">
+          @if (previewUrl(); as url) {
+            <img class="image-field__img" [src]="url" alt="" />
+          } @else if (savedImageUrl(); as url) {
+            <img class="image-field__img" [src]="url" alt="" />
+          } @else {
+            <span class="image-field__placeholder">🍽️</span>
+          }
+        </span>
+        <div class="image-field__controls">
+          <input
+            type="file"
+            id="recipe-image"
+            [accept]="acceptAttribute"
+            (change)="onFileSelected($event)"
+            [attr.aria-invalid]="imageError() ? 'true' : null"
+            [attr.aria-describedby]="imageError() ? 'image-error' : 'image-hint'"
+          />
+          @if (imageError(); as message) {
+            <small id="image-error" class="field__error" role="alert">{{ message }}</small>
+          } @else {
+            <small id="image-hint" class="image-field__hint">JPEG, PNG or WebP, up to 5 MB.</small>
+          }
+          @if (hasImagePreview()) {
+            <button type="button" class="image-field__remove" (click)="removeImage()">
+              Remove photo
+            </button>
+          }
+        </div>
       </div>
-    }
-    <button type="button" class="add" (click)="addIngredient()">Add ingredient</button>
-  </fieldset>
+    </div>
 
-  <fieldset class="group" formArrayName="steps">
-    <legend>Steps</legend>
-    @for (step of steps.controls; track step; let i = $index) {
-      <div class="row" [formGroupName]="i">
-        <span class="row__order">{{ i + 1 }}.</span>
-        <input class="row__grow" type="text" placeholder="Instruction" formControlName="instruction" />
-        <button type="button" class="row__remove" (click)="removeStep(i)" [disabled]="steps.length === 1">
-          Remove
-        </button>
-      </div>
-    }
-    <button type="button" class="add" (click)="addStep()">Add step</button>
-  </fieldset>
+    <label class="field field--narrow">
+      <span>Servings</span>
+      <input
+        type="number"
+        formControlName="servings"
+        min="1"
+        [attr.aria-invalid]="showError(form.controls.servings) ? 'true' : null"
+        [attr.aria-describedby]="showError(form.controls.servings) ? 'servings-error' : null"
+      />
+      @if (showError(form.controls.servings)) {
+        <small id="servings-error" class="field__error">Servings must be at least 1.</small>
+      }
+    </label>
 
-  <fieldset class="group" formArrayName="categories">
-    <legend>Categories</legend>
-    <p class="group__hint">Optional. Group this recipe under one or more categories.</p>
-    @for (category of categories.controls; track category; let i = $index) {
-      <div class="row">
-        <input class="row__grow" type="text" placeholder="e.g. Dessert" [formControlName]="i" />
-        <button type="button" class="row__remove" (click)="removeCategory(i)">Remove</button>
-      </div>
-    }
-    <button type="button" class="add" (click)="addCategory()">Add category</button>
-  </fieldset>
+    <!--
+      Every row input below carries a real, visually-hidden label. The placeholder alone is not a
+      label: it is unreliable for assistive tech, and it disappears the moment the field has content —
+      so a user reviewing what they typed has no way to tell what the field was for.
 
-  <fieldset class="group" formArrayName="tags">
-    <legend>Tags</legend>
-    <p class="group__hint">Optional. Add freeform labels like “quick” or “vegetarian”.</p>
-    @for (tag of tags.controls; track tag; let i = $index) {
-      <div class="row">
-        <input class="row__grow" type="text" placeholder="e.g. vegetarian" [formControlName]="i" />
-        <button type="button" class="row__remove" (click)="removeTag(i)">Remove</button>
-      </div>
-    }
-    <button type="button" class="add" (click)="addTag()">Add tag</button>
-  </fieldset>
+      The Remove buttons are labelled with their position for the same reason. Four buttons all named
+      "Remove" are indistinguishable in a screen reader's element list, where they are read out of
+      their visual context.
+    -->
+    <fieldset class="group" formArrayName="ingredients">
+      <legend>Ingredients</legend>
+      @for (ingredient of ingredients.controls; track ingredient; let i = $index) {
+        <div class="row" [formGroupName]="i">
+          <label class="rb-visually-hidden" [for]="'ingredient-name-' + i">
+            Ingredient {{ i + 1 }} name
+          </label>
+          <input
+            class="row__grow"
+            [id]="'ingredient-name-' + i"
+            type="text"
+            placeholder="Name"
+            formControlName="name"
+          />
 
-  <div class="actions">
-    <button type="submit" class="save" [disabled]="submitting() || loadFailed()">
-      {{ submitting() ? 'Saving…' : isEdit() ? 'Save changes' : 'Create recipe' }}
-    </button>
-    <a class="cancel" routerLink="/">Cancel</a>
-  </div>
-</form>
+          <label class="rb-visually-hidden" [for]="'ingredient-qty-' + i">
+            Ingredient {{ i + 1 }} quantity
+          </label>
+          <input
+            class="row__qty"
+            [id]="'ingredient-qty-' + i"
+            type="number"
+            placeholder="Qty"
+            formControlName="quantity"
+            min="0"
+          />
+
+          <label class="rb-visually-hidden" [for]="'ingredient-unit-' + i">
+            Ingredient {{ i + 1 }} unit
+          </label>
+          <input
+            class="row__unit"
+            [id]="'ingredient-unit-' + i"
+            type="text"
+            placeholder="Unit"
+            formControlName="unit"
+          />
+
+          <button
+            type="button"
+            class="row__remove"
+            [attr.aria-label]="'Remove ingredient ' + (i + 1)"
+            (click)="removeIngredient(i)"
+            [disabled]="ingredients.length === 1"
+          >
+            Remove
+          </button>
+        </div>
+      }
+      <button type="button" class="add" (click)="addIngredient()">Add ingredient</button>
+    </fieldset>
+
+    <fieldset class="group" formArrayName="steps">
+      <legend>Steps</legend>
+      @for (step of steps.controls; track step; let i = $index) {
+        <div class="row" [formGroupName]="i">
+          <span class="row__order" aria-hidden="true">{{ i + 1 }}.</span>
+          <label class="rb-visually-hidden" [for]="'step-' + i">Step {{ i + 1 }} instruction</label>
+          <input
+            class="row__grow"
+            [id]="'step-' + i"
+            type="text"
+            placeholder="Instruction"
+            formControlName="instruction"
+          />
+          <button
+            type="button"
+            class="row__remove"
+            [attr.aria-label]="'Remove step ' + (i + 1)"
+            (click)="removeStep(i)"
+            [disabled]="steps.length === 1"
+          >
+            Remove
+          </button>
+        </div>
+      }
+      <button type="button" class="add" (click)="addStep()">Add step</button>
+    </fieldset>
+
+    <fieldset class="group" formArrayName="categories">
+      <legend>Categories</legend>
+      <p class="group__hint">Optional. Group this recipe under one or more categories.</p>
+      @for (category of categories.controls; track category; let i = $index) {
+        <div class="row">
+          <label class="rb-visually-hidden" [for]="'category-' + i">Category {{ i + 1 }}</label>
+          <input
+            class="row__grow"
+            [id]="'category-' + i"
+            type="text"
+            placeholder="e.g. Dessert"
+            [formControlName]="i"
+          />
+          <button
+            type="button"
+            class="row__remove"
+            [attr.aria-label]="'Remove category ' + (i + 1)"
+            (click)="removeCategory(i)"
+          >
+            Remove
+          </button>
+        </div>
+      }
+      <button type="button" class="add" (click)="addCategory()">Add category</button>
+    </fieldset>
+
+    <fieldset class="group" formArrayName="tags">
+      <legend>Tags</legend>
+      <p class="group__hint">Optional. Add freeform labels like “quick” or “vegetarian”.</p>
+      @for (tag of tags.controls; track tag; let i = $index) {
+        <div class="row">
+          <label class="rb-visually-hidden" [for]="'tag-' + i">Tag {{ i + 1 }}</label>
+          <input
+            class="row__grow"
+            [id]="'tag-' + i"
+            type="text"
+            placeholder="e.g. vegetarian"
+            [formControlName]="i"
+          />
+          <button
+            type="button"
+            class="row__remove"
+            [attr.aria-label]="'Remove tag ' + (i + 1)"
+            (click)="removeTag(i)"
+          >
+            Remove
+          </button>
+        </div>
+      }
+      <button type="button" class="add" (click)="addTag()">Add tag</button>
+    </fieldset>
+
+    <div class="actions">
+      <button type="submit" class="save" [disabled]="submitting() || loadFailed()">
+        {{ submitting() ? 'Saving…' : isEdit() ? 'Save changes' : 'Create recipe' }}
+      </button>
+      <a class="cancel" routerLink="/">Cancel</a>
+    </div>
+  </form>
+}

@@ -20,42 +20,82 @@
   }
 }
 
-@if (recipes$ | async; as recipes) {
-  @if (recipes.length) {
-    <ul class="card-grid">
-      @for (recipe of recipes; track recipe.id) {
-        <li>
-          <a class="card" [routerLink]="['/recipes', recipe.id]">
-            <span class="card__band" aria-hidden="true">
-              <span class="card__band-emoji">🍽️</span>
-            </span>
-            <div class="card__body">
-              <h2 class="card__title">{{ recipe.name }}</h2>
-              @if (recipe.description) {
-                <p class="card__description">{{ recipe.description }}</p>
-              }
-              <dl class="card__meta">
-                <div><dt>Serves</dt><dd>{{ recipe.servings }}</dd></div>
-                <div><dt>Ingredients</dt><dd>{{ recipe.ingredientCount }}</dd></div>
-                <div><dt>Steps</dt><dd>{{ recipe.stepCount }}</dd></div>
-              </dl>
-              @if (recipe.categories.length) {
-                <ul class="card__tags">
-                  @for (category of recipe.categories; track category) {
-                    <li>{{ category }}</li>
-                  }
-                </ul>
-              }
-            </div>
-          </a>
-        </li>
-      }
-    </ul>
-  } @else if (hasFilter$ | async) {
-    <p class="empty">No recipes match that filter. Try a different ingredient or category.</p>
-  } @else {
-    <p class="empty">No recipes yet. Create the first one.</p>
+@if (view$ | async; as view) {
+  @switch (view.status) {
+    @case ('loaded') {
+      <!--
+        The result count lives in a role="status" region so that filtering, and paging, are announced
+        to screen reader users. Without it both are silent: the cards swap out below the fold of the
+        user's attention and nothing tells them anything changed.
+      -->
+      <p class="list-count" role="status">
+        Showing {{ view.from }}–{{ view.to }} of {{ view.total }}
+        {{ view.total === 1 ? 'recipe' : 'recipes' }}
+      </p>
+
+      <ul class="card-grid">
+        @for (recipe of view.recipes; track recipe.id) {
+          <li>
+            <a class="card" [routerLink]="['/recipes', recipe.id]">
+              <!-- Decorative: the card's own title names the dish, so an alt here would only make a
+                   screen reader read it twice. The whole band is hidden from the a11y tree. -->
+              <span class="card__band" aria-hidden="true">
+                @if (recipe.hasImage) {
+                  <img class="card__image" [src]="imageUrl(recipe.id)" alt="" loading="lazy" />
+                } @else {
+                  <span class="card__band-emoji">🍽️</span>
+                }
+              </span>
+              <div class="card__body">
+                <h2 class="card__title">{{ recipe.name }}</h2>
+                @if (recipe.description) {
+                  <p class="card__description">{{ recipe.description }}</p>
+                }
+                <dl class="card__meta">
+                  <div><dt>Serves</dt><dd>{{ recipe.servings }}</dd></div>
+                  <div><dt>Ingredients</dt><dd>{{ recipe.ingredientCount }}</dd></div>
+                  <div><dt>Steps</dt><dd>{{ recipe.stepCount }}</dd></div>
+                </dl>
+                @if (recipe.categories.length) {
+                  <ul class="card__tags">
+                    @for (category of recipe.categories; track category) {
+                      <li>{{ category }}</li>
+                    }
+                  </ul>
+                }
+              </div>
+            </a>
+          </li>
+        }
+      </ul>
+
+      <app-pagination
+        [page]="view.page"
+        [pageCount]="view.pageCount"
+        (pageChange)="onPageChange($event)"
+      />
+    }
+
+    @case ('empty') {
+      <p class="empty" role="status">
+        @if (view.hasFilter) {
+          No recipes match that filter. Try a different ingredient or category.
+        } @else {
+          No recipes yet. Create the first one.
+        }
+      </p>
+    }
+
+    @case ('error') {
+      <!-- role="alert" rather than status: a failed load is interruptive and shouldn't wait for a pause. -->
+      <div class="empty empty--error" role="alert">
+        <p class="empty__message">Something went wrong loading the recipes.</p>
+        <button type="button" class="empty__retry" (click)="onRetry()">Try again</button>
+      </div>
+    }
+
+    @default {
+      <p class="empty" role="status">Loading recipes…</p>
+    }
   }
-} @else {
-  <p class="empty">Loading recipes…</p>
 }

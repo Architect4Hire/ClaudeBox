@@ -19,8 +19,15 @@ builder.AddNpgsqlDbContext<RecipeDbContext>("recipesdb");
 // Registers IDistributedCache; the connection is injected, not configured by hand.
 builder.AddRedisDistributedCache("cache");
 
+// Blob container for recipe images via the Aspire Azure Storage integration, keyed to the
+// "recipe-images" AppHost resource (Azurite locally). Registers BlobContainerClient; as with the two
+// above, the connection is injected by Aspire, never a connection string here.
+builder.AddAzureBlobContainerClient("recipe-images");
+
 // Recipes feature: layered Controller → Facade → Business → DataLayer → Repository (each on the
-// interface below it).
+// interface below it). The image store sits beside the repository as the data layer's second store:
+// the repository owns the recipe row, this owns the image bytes.
+builder.Services.AddScoped<IRecipeImageStore, BlobRecipeImageStore>();
 builder.Services.AddScoped<IRecipeRepository, RecipeRepository>();
 builder.Services.AddScoped<IRecipeDataLayer, RecipeDataLayer>();
 builder.Services.AddScoped<IRecipeBusiness, RecipeBusiness>();
@@ -50,8 +57,13 @@ if (app.Environment.IsDevelopment())
     if (db.Database.IsNpgsql())
     {
         await db.Database.MigrateAsync();
-        // Give a fresh database a handful of recipes so the list renders on first run. No-op once any exist.
-        await RecipeSeeder.SeedAsync(db);
+        // Give a fresh database a handful of recipes, with their photographs, so the list renders on
+        // first run. No-op once any exist. The image store is resolved here rather than inside the
+        // seeder so the seeder stays a plain function of the two stores it writes to.
+        await RecipeSeeder.SeedAsync(
+            db,
+            scope.ServiceProvider.GetRequiredService<IRecipeImageStore>(),
+            scope.ServiceProvider.GetRequiredService<ILogger<Program>>());
     }
 }
 

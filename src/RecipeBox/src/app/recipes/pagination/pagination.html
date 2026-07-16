@@ -1,0 +1,55 @@
+@if (pageCount() > 1) {
+  <nav class="pagination" aria-label="Recipe pages">
+    <!--
+      aria-disabled, not the disabled property. A disabled button is removed from the tab order, and
+      browsers drop focus to <body> when the element holding it becomes disabled — so paging to the
+      first or last page with the keyboard would silently strand the user at the top of the document.
+      Marked unavailable this way the button keeps focus and stays announced, and go() already refuses
+      out-of-range pages, so the click is a no-op.
+    -->
+    <button
+      type="button"
+      class="pagination__step"
+      [attr.aria-disabled]="page() <= 1 ? 'true' : null"
+      (click)="go(page() - 1)"
+    >
+      <span aria-hidden="true">←</span> Previous
+    </button>
+
+    <ul class="pagination__pages">
+      @for (slot of slots(); track $index) {
+        <li>
+          @if (slot === null) {
+            <span class="pagination__gap" aria-hidden="true">…</span>
+          } @else {
+            <!--
+              aria-label spells out "Page 3" because the visible label is a bare numeral, which a
+              screen reader would otherwise announce as a meaningless "3". aria-current marks the
+              active page; the binding resolves to null (not "false") when inactive so the attribute
+              is dropped entirely rather than announced as present-but-false.
+            -->
+            <button
+              type="button"
+              class="pagination__page"
+              [class.pagination__page--current]="slot === page()"
+              [attr.aria-current]="slot === page() ? 'page' : null"
+              [attr.aria-label]="'Page ' + slot"
+              (click)="go(slot)"
+            >
+              {{ slot }}
+            </button>
+          }
+        </li>
+      }
+    </ul>
+
+    <button
+      type="button"
+      class="pagination__step"
+      [attr.aria-disabled]="page() >= pageCount() ? 'true' : null"
+      (click)="go(page() + 1)"
+    >
+      Next <span aria-hidden="true">→</span>
+    </button>
+  </nav>
+}

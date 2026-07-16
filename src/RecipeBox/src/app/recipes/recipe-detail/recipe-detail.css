@@ -20,6 +20,27 @@
   gap: 0.5rem;
 }
 
+/* The photograph, when there is one — a banner above the header rather than a thumbnail beside it.
+   The 68px tile below is sized for an emoji; a real photo earns the room. */
+.recipe__banner {
+  display: block;
+  width: 100%;
+  height: 280px;
+  /* cover: the seed photos are a mix of orientations, and fitting the portrait ones would letterbox
+     them. Cropping to the centre suits food photography. */
+  object-fit: cover;
+  margin-bottom: 1.5rem;
+  border: 1px solid var(--rb-border);
+  border-radius: var(--rb-r-lg);
+  box-shadow: var(--rb-shadow-md);
+}
+
+@media (max-width: 640px) {
+  .recipe__banner {
+    height: 200px;
+  }
+}
+
 .recipe__header {
   position: relative;
   display: flex;
@@ -205,7 +226,9 @@
   width: 1.85rem;
   height: 1.85rem;
   border-radius: var(--rb-r-pill);
-  background: var(--rb-gradient);
+  /* CTA ramp, not the decorative one: aria-hidden keeps these numerals out of the accessibility tree
+     but they are still read by everyone looking at the screen, so they owe the same 4.5:1 as any text. */
+  background: var(--rb-gradient-cta);
   color: #fff;
   font-family: var(--rb-font-display);
   font-size: 0.9rem;
@@ -232,3 +255,5 @@
   color: var(--rb-primary-ink);
   font-weight: 600;
 }
+
+/* The error panel itself (.empty--error and friends) is shared with the list view — see styles.css. */

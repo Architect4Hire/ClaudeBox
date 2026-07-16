@@ -1,4 +1,5 @@
 using RecipeBox.ApiService.Data;
+using RecipeBox.ApiService.Managers.Infrastructure;
 using RecipeBox.ApiService.Managers.Mappers;
 using RecipeBox.ApiService.Managers.Models.Domain;
 using RecipeBox.ApiService.Managers.Models.ServiceModels;
@@ -64,8 +65,53 @@ public class RecipeBusiness(IRecipeDataLayer data) : IRecipeBusiness
         return updated?.ToServiceModel();
     }
 
-    // Deleting a recipe also reaps the categories and tags it orphaned. That sequencing is a data
-    // concern, so it lives in the data layer and arrives here as one operation.
+    // Deleting a recipe also reaps the categories and tags it orphaned, and its image. That sequencing
+    // is a data concern, so it lives in the data layer and arrives here as one operation.
     public Task<bool> DeleteAsync(int id, CancellationToken ct) =>
         _data.DeleteRecipeAsync(id, ct);
+
+    public async Task<RecipeImageServiceModel?> GetImageAsync(int id, CancellationToken ct)
+    {
+        var image = await _data.OpenImageAsync(id, ct);
+        return image?.ToServiceModel();
+    }
+
+    public async Task<bool> SetImageAsync(int id, UploadRecipeImageViewModel viewModel, CancellationToken ct)
+    {
+        // What the file *is*, decided from its bytes. The validator has already rejected anything
+        // unrecognised, so a null here would mean it didn't run — hence the throw rather than a
+        // fallback: guessing a content type is precisely the mistake this whole path exists to avoid.
+        var contentType = await RecipeImageFormat.DetectAsync(viewModel.Content, ct)
+            ?? throw new InvalidOperationException(
+                "Upload reached the business layer without a recognised image format; " +
+                "UploadRecipeImageViewModelValidator should have rejected it.");
+
+        var blobName = NewBlobName(id, contentType);
+        return await _data.SetImageAsync(id, blobName, viewModel.Content, contentType, ct);
+    }
+
+    public Task<bool> RemoveImageAsync(int id, CancellationToken ct) =>
+        _data.RemoveImageAsync(id, ct);
+
+    /// <summary>
+    /// Mints a fresh name for every upload rather than reusing one per recipe.
+    /// <para>That's what lets the data layer upload before it writes the row: a new name can't collide
+    /// with the image currently being served, so the new bytes stay invisible until the row points at
+    /// them, and a failed upload leaves the old image intact. Reusing a stable name would overwrite the
+    /// live image in place, and a failure mid-upload would corrupt it.</para>
+    /// <para>The recipe id leads so the container groups by recipe, which makes an orphan obvious when
+    /// browsing the store.</para>
+    /// </summary>
+    private static string NewBlobName(int id, string contentType) =>
+        $"recipes/{id}/{Guid.NewGuid():N}{Extension(contentType)}";
+
+    // Cosmetic only — nothing reads the format back off the name (the blob carries its own content
+    // type). It's here so a human browsing the container sees what a blob is without opening it.
+    private static string Extension(string contentType) => contentType switch
+    {
+        RecipeImageFormat.Jpeg => ".jpg",
+        RecipeImageFormat.Png => ".png",
+        RecipeImageFormat.WebP => ".webp",
+        _ => "",
+    };
 }

@@ -76,44 +76,56 @@ public class RecipeRepositoryTests : IDisposable
     }
 
     // ── Transactions ─────────────────────────────────────────────────────────────────────────────
-    // The data layer composes multi-write operations behind IDataTransaction (see RecipeDataLayer.
-    // DeleteRecipeAsync). Those tests mock the repository, so they can only prove commit/rollback was
-    // *asked for* — these prove the abstraction is wired to a real one.
+    // The data layer composes multi-write operations behind ExecuteInTransactionAsync (see
+    // RecipeDataLayer.DeleteRecipeAsync). Those tests mock the repository, so they can only prove the
+    // unit was handed over — these prove it's wired to a real transaction. That it also survives
+    // Npgsql's retrying execution strategy is provider-specific, and lives in
+    // RecipeRepositoryPostgresTests.
 
     [Fact]
-    public async Task BeginTransactionAsync_rolls_back_writes_when_disposed_without_a_commit()
+    public async Task ExecuteInTransactionAsync_rolls_back_writes_when_the_operation_throws()
     {
         await SeedAsync(Recipe("Soup", "Mains", 2, 3));
         await using var context = NewContext();
         var sut = new RecipeRepository(context);
         var id = await IdOfAsync("Soup");
 
-        await using (await sut.BeginTransactionAsync(CancellationToken.None))
-        {
-            Assert.True(await sut.DeleteAsync(id, CancellationToken.None));
-            // Fall out of scope without committing — disposal must undo the delete.
-        }
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            sut.ExecuteInTransactionAsync<bool>(
+                async token =>
+                {
+                    Assert.True(await sut.DeleteAsync(id, token));
+                    throw new InvalidOperationException("something later failed");
+                },
+                CancellationToken.None));
 
         await using var verify = NewContext();
         Assert.True(await verify.Recipes.AnyAsync(r => r.Id == id));
     }
 
     [Fact]
-    public async Task BeginTransactionAsync_keeps_writes_once_committed()
+    public async Task ExecuteInTransactionAsync_keeps_writes_when_the_operation_returns()
     {
         await SeedAsync(Recipe("Soup", "Mains", 2, 3));
         await using var context = NewContext();
         var sut = new RecipeRepository(context);
         var id = await IdOfAsync("Soup");
 
-        await using (var transaction = await sut.BeginTransactionAsync(CancellationToken.None))
-        {
-            Assert.True(await sut.DeleteAsync(id, CancellationToken.None));
-            await transaction.CommitAsync(CancellationToken.None);
-        }
+        var deleted = await sut.ExecuteInTransactionAsync(
+            token => sut.DeleteAsync(id, token), CancellationToken.None);
 
+        Assert.True(deleted);
         await using var verify = NewContext();
         Assert.False(await verify.Recipes.AnyAsync(r => r.Id == id));
+    }
+
+    [Fact]
+    public async Task ExecuteInTransactionAsync_returns_the_operations_result()
+    {
+        await using var context = NewContext();
+        var sut = new RecipeRepository(context);
+
+        Assert.Equal(42, await sut.ExecuteInTransactionAsync(_ => Task.FromResult(42), CancellationToken.None));
     }
 
     [Fact]
@@ -124,7 +136,7 @@ public class RecipeRepositoryTests : IDisposable
         await SeedAsync(Recipe("Soup", "Mains", 2, 3));
         await using var context = NewContext();
         var id = await IdOfAsync("Soup");
-        var sut = new RecipeDataLayer(new ThrowingSweepRepository(context));
+        var sut = new RecipeDataLayer(new ThrowingSweepRepository(context), new FakeRecipeImageStore());
 
         await Assert.ThrowsAsync<InvalidOperationException>(
             () => sut.DeleteRecipeAsync(id, CancellationToken.None));
@@ -145,8 +157,8 @@ public class RecipeRepositoryTests : IDisposable
         public Task<int> DeleteOrphanedCategoriesAsync(CancellationToken ct) =>
             throw new InvalidOperationException("sweep failed");
 
-        public Task<IDataTransaction> BeginTransactionAsync(CancellationToken ct) =>
-            _inner.BeginTransactionAsync(ct);
+        public Task<T> ExecuteInTransactionAsync<T>(Func<CancellationToken, Task<T>> operation, CancellationToken ct) =>
+            _inner.ExecuteInTransactionAsync(operation, ct);
 
         public Task<bool> DeleteAsync(int id, CancellationToken ct) => _inner.DeleteAsync(id, ct);
 
@@ -168,6 +180,12 @@ public class RecipeRepositoryTests : IDisposable
 
         public Task<Recipe?> UpdateAsync(int id, Recipe incoming, CancellationToken ct) =>
             _inner.UpdateAsync(id, incoming, ct);
+
+        public Task<string?> GetImageBlobNameAsync(int id, CancellationToken ct) =>
+            _inner.GetImageBlobNameAsync(id, ct);
+
+        public Task<ImageAssignment> SetImageBlobNameAsync(int id, string? blobName, CancellationToken ct) =>
+            _inner.SetImageBlobNameAsync(id, blobName, ct);
     }
 
     private async Task<int> IdOfAsync(string name)

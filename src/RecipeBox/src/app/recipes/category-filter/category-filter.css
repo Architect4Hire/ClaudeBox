@@ -16,8 +16,11 @@
   font-weight: 500;
   cursor: pointer;
   box-shadow: var(--rb-shadow-sm);
-  transition: color var(--rb-fast) var(--rb-ease), background var(--rb-fast) var(--rb-ease),
-    border-color var(--rb-fast) var(--rb-ease), transform var(--rb-fast) var(--rb-ease);
+  transition:
+    color var(--rb-fast) var(--rb-ease),
+    background var(--rb-fast) var(--rb-ease),
+    border-color var(--rb-fast) var(--rb-ease),
+    transform var(--rb-fast) var(--rb-ease);
 }
 
 .chip:hover {
@@ -31,7 +34,7 @@
 }
 
 .chip--active {
-  background: var(--rb-gradient);
+  background: var(--rb-gradient-cta);
   border-color: transparent;
   color: #fff;
   box-shadow: 0 4px 12px rgba(224, 90, 43, 0.26);

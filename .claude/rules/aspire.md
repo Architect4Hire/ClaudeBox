@@ -11,7 +11,10 @@ The AppHost is the single source of truth for the application model. Keep it dec
   in the AppHost (e.g. `AddPostgres(...).AddDatabase("recipesdb")`, `AddProject<...>("api")`,
   `AddJavaScriptApp("web", "../RecipeBox", "start")`). Nothing outside the AppHost invents infrastructure.
 - **Local-first.** Backing resources run as local containers for development — no cloud/Azure
-  resources in this PoC.
+  resources in this PoC. An *emulator-backed* Azure resource is in bounds, because it is a local
+  container: `AddAzureStorage("storage").RunAsEmulator(...)` runs Azurite, exactly as `AddPostgres`
+  runs Postgres. The test is where it runs, not what the API is called. What stays out is a resource
+  that needs a real subscription — anything reached with `AsExisting`, or provisioned for real.
 - **Wire with the model, not with strings.** Connect services using `WithReference(...)` and
   order startup with `WaitFor(...)`. Never hardcode connection strings or `localhost:port`;
   Aspire injects endpoints and connection info via environment/service discovery.

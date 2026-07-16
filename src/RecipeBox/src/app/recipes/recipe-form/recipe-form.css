@@ -1,3 +1,14 @@
+.form-loading {
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 2rem;
+  text-align: center;
+  color: var(--rb-text-muted);
+  background: var(--rb-surface);
+  border: 1px dashed var(--rb-border-strong);
+  border-radius: var(--rb-r-lg);
+}
+
 .recipe-form {
   max-width: 680px;
   margin: 0 auto;
@@ -40,7 +51,9 @@ textarea {
   background: var(--rb-surface);
   color: var(--rb-text);
   font: inherit;
-  transition: border-color var(--rb-fast) var(--rb-ease), box-shadow var(--rb-fast) var(--rb-ease);
+  transition:
+    border-color var(--rb-fast) var(--rb-ease),
+    box-shadow var(--rb-fast) var(--rb-ease);
 }
 
 input::placeholder,
@@ -125,7 +138,9 @@ textarea {
   cursor: pointer;
   font-size: 0.8rem;
   font-weight: 500;
-  transition: border-color var(--rb-fast) var(--rb-ease), color var(--rb-fast) var(--rb-ease),
+  transition:
+    border-color var(--rb-fast) var(--rb-ease),
+    color var(--rb-fast) var(--rb-ease),
     background var(--rb-fast) var(--rb-ease);
 }
 
@@ -150,7 +165,9 @@ textarea {
   cursor: pointer;
   font-size: 0.83rem;
   font-weight: 600;
-  transition: background var(--rb-fast) var(--rb-ease), transform var(--rb-fast) var(--rb-ease);
+  transition:
+    background var(--rb-fast) var(--rb-ease),
+    transform var(--rb-fast) var(--rb-ease);
 }
 
 .add:hover {
@@ -169,13 +186,15 @@ textarea {
   padding: 0.7rem 1.5rem;
   border: 0;
   border-radius: var(--rb-r-pill);
-  background: var(--rb-gradient);
+  background: var(--rb-gradient-cta);
   color: #fff;
   font-weight: 600;
   font-size: 0.95rem;
   cursor: pointer;
   box-shadow: 0 6px 16px rgba(224, 90, 43, 0.28);
-  transition: transform var(--rb-fast) var(--rb-ease), box-shadow var(--rb-fast) var(--rb-ease),
+  transition:
+    transform var(--rb-fast) var(--rb-ease),
+    box-shadow var(--rb-fast) var(--rb-ease),
     filter var(--rb-fast) var(--rb-ease);
 }
 
@@ -214,4 +233,94 @@ textarea {
   color: var(--rb-danger);
   font-weight: 500;
   margin: 0;
+}
+
+/* ── Photo field ──────────────────────────────────────────────────────────────────────────────
+   The photo's label is a real <label for>, not the wrapping `label.field > span` the other fields
+   use, because a preview and buttons can't live inside a label. Match its styling here so it doesn't
+   read as a different kind of field. */
+.field > label {
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: var(--rb-text);
+}
+
+.image-field {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.image-field__preview {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 128px;
+  height: 96px;
+  overflow: hidden;
+  border: 1px solid var(--rb-border);
+  border-radius: var(--rb-r-md);
+  background: var(--rb-gradient);
+}
+
+.image-field__img {
+  width: 100%;
+  height: 100%;
+  /* Same crop as the card band and detail banner, so what's previewed here is what gets rendered. */
+  object-fit: cover;
+}
+
+.image-field__placeholder {
+  font-size: 1.75rem;
+  filter: drop-shadow(0 2px 3px rgba(76, 30, 10, 0.28));
+}
+
+.image-field__controls {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+/* The generic input rule gives every input a box; a file picker is a button and a filename, and the
+   border makes it look like an empty text field. */
+.image-field__controls input[type='file'] {
+  padding: 0;
+  border: none;
+  background: none;
+  font-size: 0.85rem;
+  max-width: 100%;
+}
+
+.image-field__hint {
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--rb-text-subtle);
+}
+
+.image-field__remove {
+  padding: 0.35rem 0.75rem;
+  border: 1px solid var(--rb-border-strong);
+  border-radius: var(--rb-r-pill);
+  background: var(--rb-surface);
+  color: var(--rb-text-muted);
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 600;
+  transition:
+    background var(--rb-fast) var(--rb-ease),
+    color var(--rb-fast) var(--rb-ease);
+}
+
+.image-field__remove:hover {
+  background: var(--rb-danger-soft);
+  color: var(--rb-danger);
+}
+
+@media (max-width: 640px) {
+  .image-field {
+    flex-direction: column;
+  }
 }

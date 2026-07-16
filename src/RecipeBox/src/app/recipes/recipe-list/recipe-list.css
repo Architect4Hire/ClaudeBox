@@ -24,13 +24,15 @@
   gap: 0.4rem;
   padding: 0.6rem 1.15rem;
   border-radius: var(--rb-r-pill);
-  background: var(--rb-gradient);
+  background: var(--rb-gradient-cta);
   color: #fff;
   text-decoration: none;
   font-weight: 600;
   font-size: 0.92rem;
   box-shadow: 0 6px 16px rgba(224, 90, 43, 0.28);
-  transition: transform var(--rb-fast) var(--rb-ease), box-shadow var(--rb-fast) var(--rb-ease),
+  transition:
+    transform var(--rb-fast) var(--rb-ease),
+    box-shadow var(--rb-fast) var(--rb-ease),
     filter var(--rb-fast) var(--rb-ease);
 }
 
@@ -70,7 +72,9 @@
   color: inherit;
   text-decoration: none;
   box-shadow: var(--rb-shadow-sm);
-  transition: box-shadow var(--rb-med) var(--rb-ease), transform var(--rb-med) var(--rb-ease),
+  transition:
+    box-shadow var(--rb-med) var(--rb-ease),
+    transform var(--rb-med) var(--rb-ease),
     border-color var(--rb-med) var(--rb-ease);
 }
 
@@ -84,11 +88,33 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 84px;
+  /* Taller than the strip this was when it only held an emoji: it now carries a photograph, and the
+     gradient fallback keeps the same height so a grid mixing the two still lines up. */
+  height: 150px;
   background:
     radial-gradient(120% 140% at 0% 0%, rgba(255, 255, 255, 0.4), transparent 45%),
     var(--rb-gradient);
   position: relative;
+  overflow: hidden;
+}
+
+.card__image {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  /* cover, because the seed photos are a mix of landscape, square and portrait: fitting them would
+     letterbox the tall ones against the gradient. Cropping to the centre is the lesser evil — food
+     photos put the food there. */
+  object-fit: cover;
+  /* Above the band's dotted overlay, which is only there for the emoji fallback. */
+  z-index: 1;
+  transition: transform var(--rb-med) var(--rb-ease);
+}
+
+/* The same lift the emoji has, so a card with a photo and a card without behave alike on hover. */
+.card:hover .card__image {
+  transform: scale(1.05);
 }
 
 .card__band::after {
@@ -190,6 +216,18 @@
   letter-spacing: 0.01em;
 }
 
+.list-count {
+  margin: 1.5rem 0 0;
+  color: var(--rb-text-muted);
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+}
+
+/* The grid's own top margin already spaces it from the search box; the count now sits between. */
+.list-count + .card-grid {
+  margin-top: 0.75rem;
+}
+
 .empty {
   margin-top: 2.5rem;
   padding: 2rem;
@@ -199,3 +237,5 @@
   border: 1px dashed var(--rb-border-strong);
   border-radius: var(--rb-r-lg);
 }
+
+/* The error panel itself (.empty--error and friends) is shared with the detail view — see styles.css. */

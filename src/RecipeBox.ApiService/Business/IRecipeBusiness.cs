@@ -36,7 +36,28 @@ public interface IRecipeBusiness
 
     /// <summary>
     /// Deletes the recipe with the given id, along with any category or tag its removal left without
-    /// recipes. Returns <c>false</c> when no recipe has that id (the controller turns that into a 404).
+    /// recipes and its image. Returns <c>false</c> when no recipe has that id (the controller turns
+    /// that into a 404).
     /// </summary>
     Task<bool> DeleteAsync(int id, CancellationToken ct);
+
+    /// <summary>
+    /// The given recipe's image, ready to stream. <c>null</c> when there are no bytes to serve — no
+    /// such recipe, no image, or a blob that has gone missing (the controller turns all three into a
+    /// 404). The caller owns the returned stream.
+    /// </summary>
+    Task<RecipeImageServiceModel?> GetImageAsync(int id, CancellationToken ct);
+
+    /// <summary>
+    /// Stores the validated upload as the given recipe's image, replacing any existing one. The format
+    /// is established from the bytes, and the blob name minted here. Returns <c>false</c> when no
+    /// recipe has that id (the controller turns that into a 404).
+    /// </summary>
+    Task<bool> SetImageAsync(int id, UploadRecipeImageViewModel viewModel, CancellationToken ct);
+
+    /// <summary>
+    /// Removes the given recipe's image. Returns <c>false</c> when no recipe has that id or it had no
+    /// image (the controller turns that into a 404).
+    /// </summary>
+    Task<bool> RemoveImageAsync(int id, CancellationToken ct);
 }

@@ -11,15 +11,22 @@ using RecipeBox.ApiService.Data;
 namespace RecipeBox.Tests.Recipes;
 
 /// <summary>
-/// Boots the API in-process for endpoint tests. The Aspire-provided Postgres context and Redis
-/// distributed cache are swapped for a shared in-memory SQLite database and an in-memory cache, so
-/// tests need no containers. Dummy connection strings satisfy the Aspire integrations at
-/// registration; the real registrations are then replaced before the host resolves them.
+/// Boots the API in-process for endpoint tests. The Aspire-provided Postgres context, Redis
+/// distributed cache, and blob container are swapped for a shared in-memory SQLite database, an
+/// in-memory cache, and an in-memory image store, so tests need no containers. Dummy connection
+/// strings satisfy the Aspire integrations at registration; the real registrations are then replaced
+/// before the host resolves them.
 /// </summary>
 public class RecipeApiFactory : WebApplicationFactory<Program>
 {
     // A single kept-open connection keeps the :memory: database alive for the host's lifetime.
     private readonly SqliteConnection _connection = new("DataSource=:memory:");
+
+    /// <summary>
+    /// The image store the API writes to, exposed so a test can seed a blob or assert on what was
+    /// stored — the bytes are otherwise only observable through the endpoint that serves them.
+    /// </summary>
+    public FakeRecipeImageStore Images { get; } = new();
 
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
@@ -29,6 +36,20 @@ public class RecipeApiFactory : WebApplicationFactory<Program>
             "ConnectionStrings:recipesdb",
             "Host=localhost;Database=recipesdb;Username=test;Password=test");
         builder.UseSetting("ConnectionStrings:cache", "localhost:6379");
+
+        // Never connected to — IRecipeImageStore is replaced below, so the BlobContainerClient this
+        // configures is never resolved. It still has to parse: the Azure client integration hands the
+        // value to DbConnectionStringBuilder at registration, so a Redis-style "host:port" dummy would
+        // throw before any test ran. This form parses and names the container, and unlike an
+        // "Endpoint=..." value it doesn't select the token-credential path.
+        builder.UseSetting(
+            "ConnectionStrings:recipe-images",
+            "UseDevelopmentStorage=true;ContainerName=recipe-images");
+
+        // The blob health check would resolve the real client, and /health is mapped in Development —
+        // which is what WebApplicationFactory runs as. Nothing hits /health today; this keeps that from
+        // becoming a trap for whoever adds the first test that does.
+        builder.UseSetting("Aspire:Azure:Storage:Blobs:DisableHealthChecks", "true");
 
         builder.ConfigureTestServices(services =>
         {
@@ -52,6 +73,12 @@ public class RecipeApiFactory : WebApplicationFactory<Program>
 
             services.RemoveAll<IDistributedCache>();
             services.AddDistributedMemoryCache();
+
+            // Swap the whole store rather than the BlobContainerClient underneath it: the seam exists
+            // precisely so the layers above can be driven without an emulator. A singleton because the
+            // instance is shared with the test asserting on it.
+            services.RemoveAll<IRecipeImageStore>();
+            services.AddSingleton<IRecipeImageStore>(Images);
         });
     }
 

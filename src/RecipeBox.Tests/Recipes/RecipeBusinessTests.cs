@@ -40,7 +40,7 @@ public class RecipeBusinessTests
     {
         var summaries = new List<RecipeSummaryServiceModel>
         {
-            new(1, "Soup", "warm", 4, new[] { "Main" }, 3, 2),
+            new(1, "Soup", "warm", 4, new[] { "Main" }, 3, 2, false),
         };
         _data.ListAsync(new RecipeFilter("Main", null), Arg.Any<CancellationToken>())
             .Returns(summaries);

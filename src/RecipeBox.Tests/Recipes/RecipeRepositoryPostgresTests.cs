@@ -42,6 +42,19 @@ public class RecipeRepositoryPostgresTests : IAsyncLifetime
             .UseNpgsql(_postgres.GetConnectionString())
             .Options);
 
+    /// <summary>
+    /// A context configured the way Aspire's Npgsql integration configures the real one — with
+    /// retry-on-failure enabled, and so with <c>NpgsqlRetryingExecutionStrategy</c> in play.
+    /// <para>This is the difference that matters, and the reason the delete bug survived a green
+    /// suite: the plain <see cref="NewContext"/> above has no execution strategy, so it accepts a
+    /// caller-opened transaction that production rejects outright. A repository test that doesn't
+    /// configure retry isn't testing the database the app actually talks to.</para>
+    /// </summary>
+    private RecipeDbContext NewRetryingContext() =>
+        new(new DbContextOptionsBuilder<RecipeDbContext>()
+            .UseNpgsql(_postgres.GetConnectionString(), npgsql => npgsql.EnableRetryOnFailure())
+            .Options);
+
     private static Recipe NewRecipe(string name) => new()
     {
         Name = name,
@@ -110,5 +123,104 @@ public class RecipeRepositoryPostgresTests : IAsyncLifetime
             .ListAsync(new RecipeFilter(null, "%"), CancellationToken.None);
 
         Assert.Empty(result);
+    }
+
+    // ── Transactions under the retrying execution strategy ───────────────────────────────────────
+    // The other behaviour SQLite cannot exercise. Aspire's Npgsql integration enables retry-on-failure,
+    // and NpgsqlRetryingExecutionStrategy rejects a transaction the caller opened itself. The whole
+    // SQLite suite is blind to it — SQLite has no execution strategy, so it happily accepted the
+    // transaction the data layer used to open, and DELETE /api/recipes/{id} returned 500 against real
+    // Postgres while every test was green. These are the tests that would have said so.
+
+    [Fact]
+    public async Task Querying_inside_a_caller_opened_transaction_is_rejected_under_the_retrying_strategy()
+    {
+        await using var context = NewRetryingContext();
+
+        // Pins the mechanism the tests below depend on, and the reason ExecuteInTransactionAsync takes
+        // a callback instead of handing back a transaction. Without this they could pass vacuously: if
+        // EnableRetryOnFailure ever stopped taking effect there'd be no strategy to offend, they'd go
+        // green against a plain connection, and the bug they exist to catch could walk back in.
+        //
+        // Note where the rejection lands. Opening the transaction is fine — it's the first query
+        // *inside* it that throws, which is why the failure surfaced from the middle of a delete
+        // rather than at the point the transaction was opened.
+        await using var transaction = await context.Database.BeginTransactionAsync();
+
+        var error = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => context.Recipes.AnyAsync());
+
+        Assert.Contains("does not support user-initiated transactions", error.Message);
+    }
+
+    [Fact]
+    public async Task ExecuteInTransactionAsync_works_under_the_retrying_execution_strategy()
+    {
+        await using var seedContext = NewRetryingContext();
+        await new RecipeRepository(seedContext).AddAsync(NewRecipe("Doomed"), CancellationToken.None);
+
+        await using var context = NewRetryingContext();
+        var sut = new RecipeRepository(context);
+        var id = await context.Recipes.Where(r => r.Name == "Doomed").Select(r => r.Id).SingleAsync();
+
+        // Before the fix this threw InvalidOperationException: "The configured execution strategy
+        // 'NpgsqlRetryingExecutionStrategy' does not support user-initiated transactions."
+        var deleted = await sut.ExecuteInTransactionAsync(
+            async token =>
+            {
+                var removed = await sut.DeleteAsync(id, token);
+                await sut.DeleteOrphanedCategoriesAsync(token);
+                await sut.DeleteOrphanedTagsAsync(token);
+                return removed;
+            },
+            CancellationToken.None);
+
+        Assert.True(deleted);
+        await using var verify = NewRetryingContext();
+        Assert.False(await verify.Recipes.AnyAsync(r => r.Id == id));
+    }
+
+    [Fact]
+    public async Task ExecuteInTransactionAsync_rolls_back_under_the_retrying_execution_strategy()
+    {
+        await using var seedContext = NewRetryingContext();
+        await new RecipeRepository(seedContext).AddAsync(NewRecipe("Survivor"), CancellationToken.None);
+
+        await using var context = NewRetryingContext();
+        var sut = new RecipeRepository(context);
+        var id = await context.Recipes.Where(r => r.Name == "Survivor").Select(r => r.Id).SingleAsync();
+
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            sut.ExecuteInTransactionAsync<bool>(
+                async token =>
+                {
+                    Assert.True(await sut.DeleteAsync(id, token));
+                    throw new InvalidOperationException("sweep failed");
+                },
+                CancellationToken.None));
+
+        // Rolling back is the point of the transaction; a strategy that swallowed the throw and
+        // committed anyway would be worse than no transaction at all.
+        await using var verify = NewRetryingContext();
+        Assert.True(await verify.Recipes.AnyAsync(r => r.Id == id));
+    }
+
+    [Fact]
+    public async Task DataLayer_delete_succeeds_against_real_postgres()
+    {
+        await using var seedContext = NewRetryingContext();
+        await new RecipeRepository(seedContext).AddAsync(NewRecipe("Doomed"), CancellationToken.None);
+
+        await using var context = NewRetryingContext();
+        var id = await context.Recipes.Where(r => r.Name == "Doomed").Select(r => r.Id).SingleAsync();
+        var images = new FakeRecipeImageStore();
+        var sut = new RecipeDataLayer(new RecipeRepository(context), images);
+
+        // The whole composed operation, on the provider the app actually runs on — the exact call
+        // DELETE /api/recipes/{id} makes, which used to 500.
+        Assert.True(await sut.DeleteRecipeAsync(id, CancellationToken.None));
+
+        await using var verify = NewRetryingContext();
+        Assert.False(await verify.Recipes.AnyAsync(r => r.Id == id));
     }
 }

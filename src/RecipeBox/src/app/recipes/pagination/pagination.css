@@ -1,0 +1,77 @@
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 2rem;
+}
+
+.pagination__pages {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.pagination__step,
+.pagination__page {
+  /* 2.25rem floor keeps the hit target comfortable for touch and imprecise pointers. */
+  min-width: 2.25rem;
+  min-height: 2.25rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.3rem;
+  padding: 0.45rem 0.7rem;
+  border: 1px solid var(--rb-border-strong);
+  border-radius: var(--rb-r-sm);
+  background: var(--rb-surface);
+  color: var(--rb-text-muted);
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: color var(--rb-fast) var(--rb-ease), border-color var(--rb-fast) var(--rb-ease),
+    background var(--rb-fast) var(--rb-ease);
+}
+
+.pagination__step {
+  border-radius: var(--rb-r-pill);
+  padding-inline: 0.9rem;
+}
+
+.pagination__page {
+  font-variant-numeric: tabular-nums;
+}
+
+.pagination__step:hover:not([aria-disabled='true']),
+.pagination__page:hover:not(.pagination__page--current) {
+  border-color: var(--rb-primary);
+  color: var(--rb-primary-ink);
+  background: var(--rb-primary-soft);
+}
+
+/* Matches aria-disabled rather than :disabled — see the template for why the button stays enabled. */
+.pagination__step[aria-disabled='true'] {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.pagination__page--current {
+  background: var(--rb-gradient-cta);
+  border-color: transparent;
+  color: #fff;
+  font-weight: 600;
+  cursor: default;
+}
+
+.pagination__gap {
+  display: inline-flex;
+  justify-content: center;
+  min-width: 1.25rem;
+  color: var(--rb-text-subtle);
+  user-select: none;
+}

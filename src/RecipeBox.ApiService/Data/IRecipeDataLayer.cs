@@ -46,9 +46,29 @@ public interface IRecipeDataLayer
     Task<Recipe?> UpdateAsync(int id, Recipe incoming, CancellationToken ct);
 
     /// <summary>
-    /// Deletes the recipe with the given id along with its owned ingredients and steps, and reaps any
-    /// category or tag the removal left without recipes. Returns <c>false</c> when no recipe has that
-    /// id, in which case nothing is reaped.
+    /// Deletes the recipe with the given id along with its owned ingredients and steps, reaps any
+    /// category or tag the removal left without recipes, and discards its image. Returns <c>false</c>
+    /// when no recipe has that id, in which case nothing is reaped.
     /// </summary>
     Task<bool> DeleteRecipeAsync(int id, CancellationToken ct);
+
+    /// <summary>
+    /// Opens the given recipe's image for reading, or <c>null</c> when the recipe doesn't exist, has
+    /// no image, or names a blob that isn't there. Reading the bytes takes both stores — the row says
+    /// which blob, the container has it — which is what makes this one call from business rather than two.
+    /// </summary>
+    Task<RecipeImage?> OpenImageAsync(int id, CancellationToken ct);
+
+    /// <summary>
+    /// Stores <paramref name="content"/> as the given recipe's image under <paramref name="blobName"/>,
+    /// replacing any existing one and discarding the blob it supersedes. Returns <c>false</c> when no
+    /// recipe has that id, leaving nothing behind.
+    /// </summary>
+    Task<bool> SetImageAsync(int id, string blobName, Stream content, string contentType, CancellationToken ct);
+
+    /// <summary>
+    /// Removes the given recipe's image and deletes its blob. Returns <c>false</c> when no recipe has
+    /// that id or it had no image — either way there is nothing to remove.
+    /// </summary>
+    Task<bool> RemoveImageAsync(int id, CancellationToken ct);
 }

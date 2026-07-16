@@ -18,12 +18,14 @@ public class RecipeFacade(
     IValidator<CreateRecipeViewModel> createValidator,
     IValidator<UpdateRecipeViewModel> updateValidator,
     IValidator<RecipeFilterViewModel> filterValidator,
+    IValidator<UploadRecipeImageViewModel> uploadImageValidator,
     IDistributedCache cache) : IRecipeFacade
 {
     private readonly IRecipeBusiness _business = business;
     private readonly IValidator<CreateRecipeViewModel> _createValidator = createValidator;
     private readonly IValidator<UpdateRecipeViewModel> _updateValidator = updateValidator;
     private readonly IValidator<RecipeFilterViewModel> _filterValidator = filterValidator;
+    private readonly IValidator<UploadRecipeImageViewModel> _uploadImageValidator = uploadImageValidator;
     private readonly IDistributedCache _cache = cache;
 
     // The unfiltered list is the only cached list. A create/update can affect filtered lists too (it
@@ -110,8 +112,7 @@ public class RecipeFacade(
 
         // The edit can change fields shown in the unfiltered list (name, servings, description) and
         // certainly changes this recipe's detail, so drop both cached copies.
-        await _cache.RemoveAsync(DetailKey(id), ct);
-        await _cache.RemoveAsync(ListAllKey, ct);
+        await InvalidateAsync(id, ct);
 
         return updated;
     }
@@ -127,10 +128,60 @@ public class RecipeFacade(
         }
 
         // The recipe is gone from both its own detail view and the unfiltered list.
-        await _cache.RemoveAsync(DetailKey(id), ct);
-        await _cache.RemoveAsync(ListAllKey, ct);
+        await InvalidateAsync(id, ct);
 
         return true;
+    }
+
+    // The image itself is never cached: a service model here owns an open stream, which reads once and
+    // can't be serialized to Redis or replayed to a second caller. It doesn't need to be — the response
+    // carries the blob's ETag, so a browser revalidates with If-None-Match and an unchanged image costs
+    // a 304 rather than a resend. The summary/detail JSON is cached, which is why the write paths below
+    // must invalidate it.
+    public Task<RecipeImageServiceModel?> GetImageAsync(int id, CancellationToken ct) =>
+        _business.GetImageAsync(id, ct);
+
+    public async Task<bool> SetImageAsync(int id, UploadRecipeImageViewModel viewModel, CancellationToken ct)
+    {
+        await _uploadImageValidator.ValidateAndThrowAsync(viewModel, ct);
+
+        var stored = await _business.SetImageAsync(id, viewModel, ct);
+        if (!stored)
+        {
+            // No recipe was touched, so the cached copies are still accurate — leave them alone.
+            return false;
+        }
+
+        // Both cached shapes carry HasImage, and it has just flipped. Miss this and the new image stays
+        // invisible for up to the cache TTL: the client is told the recipe has no image, so it never
+        // requests one, and no amount of ETag revalidation helps a URL nobody fetches.
+        await InvalidateAsync(id, ct);
+
+        return true;
+    }
+
+    public async Task<bool> RemoveImageAsync(int id, CancellationToken ct)
+    {
+        // No validation step: there is no view model to validate, only a route id.
+        var removed = await _business.RemoveImageAsync(id, ct);
+        if (!removed)
+        {
+            return false;
+        }
+
+        // HasImage has flipped the other way; the same staleness argument as SetImageAsync applies, and
+        // here the cached copy would point the client at bytes that no longer exist.
+        await InvalidateAsync(id, ct);
+
+        return true;
+    }
+
+    // Both cached shapes describe the recipe, so any write to it drops both: its own detail, and the
+    // unfiltered list it appears in.
+    private async Task InvalidateAsync(int id, CancellationToken ct)
+    {
+        await _cache.RemoveAsync(DetailKey(id), ct);
+        await _cache.RemoveAsync(ListAllKey, ct);
     }
 
     private async Task<T?> GetCachedAsync<T>(string key, CancellationToken ct)

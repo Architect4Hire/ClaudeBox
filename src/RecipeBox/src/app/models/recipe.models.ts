@@ -14,6 +14,12 @@ export interface RecipeSummaryDto {
   categories: string[];
   ingredientCount: number;
   stepCount: number;
+  /**
+   * Whether the recipe has an image — not where it is. The API deliberately publishes no URL (that
+   * would bake its own route into a response model), so build the address with
+   * `RecipeService.imageUrl(id)` and use this to decide between the image and the placeholder.
+   */
+  hasImage: boolean;
 }
 
 /** An ingredient line. Mirrors `IngredientServiceModel`. */
@@ -39,6 +45,8 @@ export interface RecipeDetailDto {
   steps: StepDto[];
   categories: string[];
   tags: string[];
+  /** See `RecipeSummaryDto.hasImage`. */
+  hasImage: boolean;
 }
 
 /** An ingredient line within a create request. Mirrors `CreateIngredientViewModel`. */

@@ -7,6 +7,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Aspire.Azure.Storage.Blobs" Version="13.4.6" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="10.0.10" />
     <PackageReference Include="Aspire.Npgsql.EntityFrameworkCore.PostgreSQL" Version="13.4.6" />
     <PackageReference Include="Aspire.StackExchange.Redis.DistributedCaching" Version="13.4.6" />
@@ -19,6 +20,13 @@
 
   <ItemGroup>
     <ProjectReference Include="..\RecipeBox.ServiceDefaults\RecipeBox.ServiceDefaults.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Seed photographs, copied beside the app so RecipeSeeder can upload them to blob storage on a
+         first run. Committed rather than fetched at startup: local orchestration must not depend on
+         the network. See SeedImages/ATTRIBUTION.md — these are CC-licensed and credit is required. -->
+    <Content Include="Data\SeedImages\*.jpg" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>
