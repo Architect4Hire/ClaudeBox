@@ -85,6 +85,29 @@ public class DomainExceptionHandlerTests
         Assert.Equal(exception.Message, _written.ProblemDetails.Detail);
     }
 
+    /// <summary>
+    /// The handler maps <see cref="DomainConflictException"/>, not the recipe subclass — a domain
+    /// exception it has never heard of still gets a 409, titled by the exception. This is what keeps
+    /// the handler domain-free; without it the generic seam is untested.
+    /// </summary>
+    private class UnknownConflictException() : DomainConflictException("Widget 7 is already booked.")
+    {
+        public override string Title => "Widget already booked.";
+    }
+
+    [Fact]
+    public async Task Any_DomainConflictException_maps_to_409_titled_by_the_exception()
+    {
+        var exception = new UnknownConflictException();
+
+        var (handled, ctx) = await HandleAsync(exception);
+
+        Assert.True(handled);
+        Assert.Equal(StatusCodes.Status409Conflict, ctx.Response.StatusCode);
+        Assert.Equal("Widget already booked.", _written!.ProblemDetails.Title);
+        Assert.Equal(exception.Message, _written.ProblemDetails.Detail);
+    }
+
     [Fact]
     public async Task Unmapped_exception_is_not_handled_and_nothing_is_written()
     {

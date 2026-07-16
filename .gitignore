@@ -34,6 +34,12 @@ npm-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 
+# ── Playwright ────────────────────────────────
+# Browser-session artifacts written by the Playwright MCP server, and e2e run output.
+.playwright-mcp/
+playwright-report/
+test-results/
+
 # ── Secrets / environment ─────────────────────
 # .NET user-secrets live outside the repo already; these catch the rest.
 .env

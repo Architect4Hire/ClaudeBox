@@ -37,8 +37,8 @@ public class RecipeRepositoryPostgresTests : IAsyncLifetime
 
     public Task DisposeAsync() => _postgres.DisposeAsync().AsTask();
 
-    private RecipeDbContext NewContext() =>
-        new(new DbContextOptionsBuilder<RecipeDbContext>()
+    private AppDbContext NewContext() =>
+        new(new DbContextOptionsBuilder<AppDbContext>()
             .UseNpgsql(_postgres.GetConnectionString())
             .Options);
 
@@ -50,8 +50,8 @@ public class RecipeRepositoryPostgresTests : IAsyncLifetime
     /// caller-opened transaction that production rejects outright. A repository test that doesn't
     /// configure retry isn't testing the database the app actually talks to.</para>
     /// </summary>
-    private RecipeDbContext NewRetryingContext() =>
-        new(new DbContextOptionsBuilder<RecipeDbContext>()
+    private AppDbContext NewRetryingContext() =>
+        new(new DbContextOptionsBuilder<AppDbContext>()
             .UseNpgsql(_postgres.GetConnectionString(), npgsql => npgsql.EnableRetryOnFailure())
             .Options);
 

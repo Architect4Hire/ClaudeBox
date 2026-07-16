@@ -1,0 +1,194 @@
+/* ==========================================================================
+   RecipeBox — global design system
+   Warm, appetizing, editorial. Tokens first, then base element styling.
+   ========================================================================== */
+
+:root {
+  /* Warm neutrals */
+  --app-bg: #faf6f0;
+  --app-bg-tint: #f4ece2;
+  --app-surface: #ffffff;
+  --app-surface-muted: #fbf6ef;
+  --app-border: #ece1d4;
+  --app-border-strong: #ddccb8;
+
+  /* Ink — every value clears 4.5:1 on --app-bg, --app-surface and --app-surface-muted */
+  --app-text: #2c2320;
+  --app-text-muted: #6f5f54;
+  --app-text-subtle: #78695f;
+
+  /* Warm brand — paprika + amber */
+  --app-primary: #e05a2b;
+  --app-primary-strong: #c4481d;
+  --app-primary-soft: #fbeadf;
+  --app-primary-ink: #9c3b16;
+  --app-accent: #f2a63d;
+
+  /*
+   * Two ramps, and the distinction is load-bearing. --app-gradient is decorative: it may only sit
+   * behind large display type or nothing at all (card band, wordmark). White text over it fails WCAG
+   * AA at every stop (2.04:1 / 3.71:1 / 4.38:1), so any control with a white label uses the darkened
+   * --app-gradient-cta instead, whose stops are all >= 4.89:1 against white.
+   */
+  --app-gradient: linear-gradient(135deg, #f2a63d 0%, #e05a2b 55%, #d64545 100%);
+  --app-gradient-cta: linear-gradient(135deg, #c4481d 0%, #a8471f 55%, #a32f3f 100%);
+
+  /* Feedback */
+  --app-danger: #c0243a;
+  --app-danger-soft: #fdecef;
+
+  /* Radius */
+  --app-r-sm: 0.5rem;
+  --app-r-md: 0.75rem;
+  --app-r-lg: 1.125rem;
+  --app-r-pill: 999px;
+
+  /* Shadow — warm-tinted */
+  --app-shadow-sm: 0 1px 2px rgba(76, 45, 26, 0.06), 0 1px 3px rgba(76, 45, 26, 0.05);
+  --app-shadow-md: 0 6px 16px rgba(76, 45, 26, 0.08), 0 2px 6px rgba(76, 45, 26, 0.05);
+  --app-shadow-lg: 0 18px 40px rgba(76, 45, 26, 0.14), 0 6px 14px rgba(76, 45, 26, 0.08);
+
+  /* Motion */
+  --app-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --app-fast: 0.14s;
+  --app-med: 0.24s;
+
+  /* Type */
+  --app-font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --app-font-display: 'Fraunces', 'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, serif;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: var(--app-font-sans);
+  color: var(--app-text);
+  background: var(--app-bg);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--app-font-display);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--app-text);
+  line-height: 1.15;
+}
+
+a {
+  color: var(--app-primary-ink);
+}
+
+/* Consistent, warm focus ring for keyboard users */
+:where(a, button, input, textarea, select):focus-visible {
+  outline: 2px solid var(--app-primary);
+  outline-offset: 2px;
+  border-radius: var(--app-r-sm);
+}
+
+::selection {
+  background: var(--app-primary-soft);
+  color: var(--app-primary-ink);
+}
+
+/*
+ * Available to assistive tech, invisible on screen. Used for labels that the visual design conveys
+ * through position or placeholder instead of visible text. Not `display: none` — that would take the
+ * element out of the accessibility tree, which is the opposite of the point.
+ */
+.rb-visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/*
+ * Retryable error panel. Lives here rather than in a component sheet because the list and the detail
+ * view present a failed load identically — and should keep doing so, since the user is meant to read
+ * them as the same kind of event. Pairs with each view's own `.empty` block.
+ */
+.empty--error {
+  border-style: solid;
+  border-color: #f5c6cf;
+  background: var(--app-danger-soft);
+}
+
+.empty__message {
+  margin: 0 0 1rem;
+  color: var(--app-danger);
+  font-weight: 500;
+}
+
+.empty__retry {
+  padding: 0.5rem 1.1rem;
+  border: 1px solid var(--app-danger);
+  border-radius: var(--app-r-pill);
+  background: var(--app-surface);
+  color: var(--app-danger);
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    background var(--app-fast) var(--app-ease),
+    color var(--app-fast) var(--app-ease);
+}
+
+.empty__retry:hover {
+  background: var(--app-danger);
+  color: #fff;
+}
+
+.empty__aside {
+  margin: 1rem 0 0;
+  font-size: 0.9rem;
+}
+
+/* Skip link — hidden until focused, then pinned over the sticky header. */
+.rb-skip-link {
+  position: absolute;
+  left: 0.5rem;
+  top: -100%;
+  z-index: 100;
+  padding: 0.7rem 1.1rem;
+  border-radius: var(--app-r-sm);
+  background: var(--app-surface);
+  color: var(--app-primary-ink);
+  font-weight: 600;
+  text-decoration: none;
+  box-shadow: var(--app-shadow-lg);
+  transition: top var(--app-fast) var(--app-ease);
+}
+
+.rb-skip-link:focus-visible {
+  top: 0.5rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}

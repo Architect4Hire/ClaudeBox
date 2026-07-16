@@ -4,7 +4,7 @@ The 31 photographs in this directory are the seed recipes' images. Every one is 
 [Wikimedia Commons](https://commons.wikimedia.org/) under a licence permitting reuse, downscaled to
 960px wide via Commons' own thumbnailer. They are committed rather than fetched at runtime so a fresh
 `aspire run` needs nothing but the local containers — see `RecipeSeeder`, which uploads them into the
-`recipe-images` blob container on first run.
+`uploads` blob container on first run.
 
 **This file is a licence obligation, not a courtesy.** Most of these are CC BY or CC BY-SA, which
 require attribution to the author. If you add, replace, or remove a seed image, update the table.

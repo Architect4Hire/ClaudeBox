@@ -29,13 +29,13 @@ public static class RecipeSeeder
     /// right way round.</para>
     /// </summary>
     public static async Task SeedAsync(
-        RecipeDbContext db, IRecipeImageStore images, ILogger logger, CancellationToken ct = default)
+        AppDbContext db, IRecipeImageStore images, ILogger logger, CancellationToken ct = default)
     {
         await SeedRecipesAsync(db, ct);
         await SeedImagesAsync(db, images, logger, ct);
     }
 
-    private static async Task SeedRecipesAsync(RecipeDbContext db, CancellationToken ct)
+    private static async Task SeedRecipesAsync(AppDbContext db, CancellationToken ct)
     {
         // Only seed a pristine database; once any recipe exists (seeded or user-created) we leave it alone.
         if (await db.Recipes.AnyAsync(ct))
@@ -834,7 +834,7 @@ public static class RecipeSeeder
     /// simply shows its placeholder.</para>
     /// </summary>
     private static async Task SeedImagesAsync(
-        RecipeDbContext db, IRecipeImageStore images, ILogger logger, CancellationToken ct)
+        AppDbContext db, IRecipeImageStore images, ILogger logger, CancellationToken ct)
     {
         // Only recipes that have no image: those already carrying one are left alone, so this is a
         // no-op on every run after the first rather than re-uploading 31 blobs at each startup.

@@ -1,0 +1,326 @@
+.form-loading {
+  max-width: 680px;
+  margin: 0 auto;
+  padding: 2rem;
+  text-align: center;
+  color: var(--app-text-muted);
+  background: var(--app-surface);
+  border: 1px dashed var(--app-border-strong);
+  border-radius: var(--app-r-lg);
+}
+
+.recipe-form {
+  max-width: 680px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  padding: 1.75rem;
+  border: 1px solid var(--app-border);
+  border-radius: var(--app-r-lg);
+  background: var(--app-surface);
+  box-shadow: var(--app-shadow-md);
+}
+
+.recipe-form h1 {
+  margin: 0;
+  font-size: clamp(1.6rem, 3.5vw, 2.1rem);
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.field--narrow {
+  max-width: 9rem;
+}
+
+.field > span {
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: var(--app-text);
+}
+
+input,
+textarea {
+  padding: 0.6rem 0.75rem;
+  border: 1px solid var(--app-border-strong);
+  border-radius: var(--app-r-sm);
+  background: var(--app-surface);
+  color: var(--app-text);
+  font: inherit;
+  transition:
+    border-color var(--app-fast) var(--app-ease),
+    box-shadow var(--app-fast) var(--app-ease);
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: var(--app-text-subtle);
+}
+
+input:focus,
+textarea:focus {
+  outline: none;
+  border-color: var(--app-primary);
+  box-shadow: 0 0 0 3px rgba(224, 90, 43, 0.16);
+}
+
+textarea {
+  resize: vertical;
+  min-height: 4.5rem;
+}
+
+.field__error {
+  color: var(--app-danger);
+  font-size: 0.8rem;
+}
+
+.group {
+  border: 1px solid var(--app-border);
+  border-radius: var(--app-r-md);
+  padding: 1.25rem;
+  background: var(--app-surface-muted);
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.group legend {
+  font-family: var(--app-font-display);
+  font-weight: 600;
+  font-size: 1.05rem;
+  padding: 0 0.4rem;
+  color: var(--app-text);
+}
+
+.group__hint {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--app-text-muted);
+}
+
+.row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.row__grow {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.row__qty {
+  width: 5rem;
+}
+
+.row__unit {
+  width: 6rem;
+}
+
+.row__order {
+  min-width: 1.5rem;
+  color: var(--app-primary-ink);
+  font-family: var(--app-font-display);
+  font-weight: 600;
+}
+
+.row__remove {
+  flex-shrink: 0;
+  padding: 0.45rem 0.7rem;
+  border: 1px solid var(--app-border-strong);
+  border-radius: var(--app-r-sm);
+  background: var(--app-surface);
+  color: var(--app-text-muted);
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 500;
+  transition:
+    border-color var(--app-fast) var(--app-ease),
+    color var(--app-fast) var(--app-ease),
+    background var(--app-fast) var(--app-ease);
+}
+
+.row__remove:hover:not(:disabled) {
+  border-color: var(--app-danger);
+  color: var(--app-danger);
+  background: var(--app-danger-soft);
+}
+
+.row__remove:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.add {
+  align-self: flex-start;
+  padding: 0.45rem 0.9rem;
+  border: 1px dashed var(--app-primary);
+  border-radius: var(--app-r-pill);
+  background: var(--app-primary-soft);
+  color: var(--app-primary-ink);
+  cursor: pointer;
+  font-size: 0.83rem;
+  font-weight: 600;
+  transition:
+    background var(--app-fast) var(--app-ease),
+    transform var(--app-fast) var(--app-ease);
+}
+
+.add:hover {
+  background: #f7ddcc;
+  transform: translateY(-1px);
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  padding-top: 0.5rem;
+}
+
+.save {
+  padding: 0.7rem 1.5rem;
+  border: 0;
+  border-radius: var(--app-r-pill);
+  background: var(--app-gradient-cta);
+  color: #fff;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  box-shadow: 0 6px 16px rgba(224, 90, 43, 0.28);
+  transition:
+    transform var(--app-fast) var(--app-ease),
+    box-shadow var(--app-fast) var(--app-ease),
+    filter var(--app-fast) var(--app-ease);
+}
+
+.save:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 22px rgba(224, 90, 43, 0.34);
+  filter: saturate(1.05);
+}
+
+.save:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.save:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.cancel {
+  color: var(--app-text-muted);
+  text-decoration: none;
+  font-weight: 500;
+  transition: color var(--app-fast) var(--app-ease);
+}
+
+.cancel:hover {
+  color: var(--app-text);
+}
+
+.error {
+  padding: 0.7rem 0.95rem;
+  border-radius: var(--app-r-sm);
+  background: var(--app-danger-soft);
+  border: 1px solid #f5c6cf;
+  color: var(--app-danger);
+  font-weight: 500;
+  margin: 0;
+}
+
+/* ── Photo field ──────────────────────────────────────────────────────────────────────────────
+   The photo's label is a real <label for>, not the wrapping `label.field > span` the other fields
+   use, because a preview and buttons can't live inside a label. Match its styling here so it doesn't
+   read as a different kind of field. */
+.field > label {
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: var(--app-text);
+}
+
+.image-field {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.image-field__preview {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 128px;
+  height: 96px;
+  overflow: hidden;
+  border: 1px solid var(--app-border);
+  border-radius: var(--app-r-md);
+  background: var(--app-gradient);
+}
+
+.image-field__img {
+  width: 100%;
+  height: 100%;
+  /* Same crop as the card band and detail banner, so what's previewed here is what gets rendered. */
+  object-fit: cover;
+}
+
+.image-field__placeholder {
+  font-size: 1.75rem;
+  filter: drop-shadow(0 2px 3px rgba(76, 30, 10, 0.28));
+}
+
+.image-field__controls {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+/* The generic input rule gives every input a box; a file picker is a button and a filename, and the
+   border makes it look like an empty text field. */
+.image-field__controls input[type='file'] {
+  padding: 0;
+  border: none;
+  background: none;
+  font-size: 0.85rem;
+  max-width: 100%;
+}
+
+.image-field__hint {
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--app-text-subtle);
+}
+
+.image-field__remove {
+  padding: 0.35rem 0.75rem;
+  border: 1px solid var(--app-border-strong);
+  border-radius: var(--app-r-pill);
+  background: var(--app-surface);
+  color: var(--app-text-muted);
+  cursor: pointer;
+  font-size: 0.8rem;
+  font-weight: 600;
+  transition:
+    background var(--app-fast) var(--app-ease),
+    color var(--app-fast) var(--app-ease);
+}
+
+.image-field__remove:hover {
+  background: var(--app-danger-soft);
+  color: var(--app-danger);
+}
+
+@media (max-width: 640px) {
+  .image-field {
+    flex-direction: column;
+  }
+}

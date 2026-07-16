@@ -25,8 +25,8 @@ public class RecipeRepositoryTests : IDisposable
         context.Database.EnsureCreated();
     }
 
-    private RecipeDbContext NewContext() =>
-        new(new DbContextOptionsBuilder<RecipeDbContext>().UseSqlite(_connection).Options);
+    private AppDbContext NewContext() =>
+        new(new DbContextOptionsBuilder<AppDbContext>().UseSqlite(_connection).Options);
 
     private static Recipe Recipe(string name, string category, int ingredients, int steps) => new()
     {
@@ -150,7 +150,7 @@ public class RecipeRepositoryTests : IDisposable
     /// rollback mid-composition. Delegates rather than subclasses, so no production method has to be
     /// made <c>virtual</c> just to be tested.
     /// </summary>
-    private sealed class ThrowingSweepRepository(RecipeDbContext db) : IRecipeRepository
+    private sealed class ThrowingSweepRepository(AppDbContext db) : IRecipeRepository
     {
         private readonly RecipeRepository _inner = new(db);
 

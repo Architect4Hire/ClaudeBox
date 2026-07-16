@@ -22,10 +22,10 @@ public class RecipeSeederTests : IDisposable
 
     public void Dispose() => _connection.Dispose();
 
-    private RecipeDbContext NewContext()
+    private AppDbContext NewContext()
     {
-        var context = new RecipeDbContext(
-            new DbContextOptionsBuilder<RecipeDbContext>().UseSqlite(_connection).Options);
+        var context = new AppDbContext(
+            new DbContextOptionsBuilder<AppDbContext>().UseSqlite(_connection).Options);
         context.Database.EnsureCreated();
         return context;
     }

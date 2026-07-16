@@ -1,0 +1,263 @@
+.recipe {
+  max-width: 820px;
+  margin: 0 auto;
+}
+
+.back {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  margin-bottom: 1rem;
+  color: var(--app-text-muted);
+  text-decoration: none;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition:
+    color var(--app-fast) var(--app-ease),
+    gap var(--app-fast) var(--app-ease);
+}
+
+.back:hover {
+  color: var(--app-primary-ink);
+  gap: 0.5rem;
+}
+
+/* The photograph, when there is one — a banner above the header rather than a thumbnail beside it.
+   The 68px tile below is sized for an emoji; a real photo earns the room. */
+.recipe__banner {
+  display: block;
+  width: 100%;
+  height: 280px;
+  /* cover: the seed photos are a mix of orientations, and fitting the portrait ones would letterbox
+     them. Cropping to the centre suits food photography. */
+  object-fit: cover;
+  margin-bottom: 1.5rem;
+  border: 1px solid var(--app-border);
+  border-radius: var(--app-r-lg);
+  box-shadow: var(--app-shadow-md);
+}
+
+@media (max-width: 640px) {
+  .recipe__banner {
+    height: 200px;
+  }
+}
+
+.recipe__header {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: 1.25rem;
+  padding: 1.75rem;
+  margin-bottom: 1.5rem;
+  border: 1px solid var(--app-border);
+  border-radius: var(--app-r-lg);
+  background:
+    radial-gradient(140% 120% at 100% 0%, rgba(242, 166, 61, 0.14), transparent 55%),
+    var(--app-surface);
+  box-shadow: var(--app-shadow-md);
+}
+
+.recipe__hero {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 68px;
+  height: 68px;
+  font-size: 2rem;
+  border-radius: var(--app-r-md);
+  background: var(--app-gradient);
+  box-shadow: 0 6px 16px rgba(224, 90, 43, 0.28);
+}
+
+.recipe__heading {
+  flex: 1;
+  min-width: 0;
+}
+
+.recipe__heading h1 {
+  margin: 0.1rem 0 0;
+  font-size: clamp(1.7rem, 4vw, 2.35rem);
+}
+
+.recipe__description {
+  margin: 0.6rem 0 0;
+  color: var(--app-text-muted);
+  line-height: 1.6;
+}
+
+.recipe__facts {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem;
+  margin-top: 0.9rem;
+}
+
+.recipe__servings {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.3rem 0.7rem;
+  border-radius: var(--app-r-pill);
+  background: var(--app-surface-muted);
+  border: 1px solid var(--app-border);
+  color: var(--app-text);
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.recipe__tags {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  padding: 0;
+  margin: 0;
+}
+
+.recipe__tags li {
+  padding: 0.2rem 0.6rem;
+  border-radius: var(--app-r-pill);
+  background: var(--app-primary-soft);
+  color: var(--app-primary-ink);
+  font-size: 0.73rem;
+  font-weight: 600;
+}
+
+.edit {
+  position: absolute;
+  top: 1.25rem;
+  right: 1.25rem;
+  padding: 0.4rem 0.95rem;
+  border: 1px solid var(--app-border-strong);
+  border-radius: var(--app-r-pill);
+  background: var(--app-surface);
+  color: var(--app-primary-ink);
+  text-decoration: none;
+  font-size: 0.82rem;
+  font-weight: 600;
+  transition:
+    border-color var(--app-fast) var(--app-ease),
+    background var(--app-fast) var(--app-ease),
+    transform var(--app-fast) var(--app-ease);
+}
+
+.edit:hover {
+  border-color: var(--app-primary);
+  background: var(--app-primary-soft);
+  transform: translateY(-1px);
+}
+
+.recipe__grid {
+  display: grid;
+  grid-template-columns: minmax(220px, 0.85fr) 1.15fr;
+  gap: 1.25rem;
+  align-items: start;
+}
+
+@media (max-width: 640px) {
+  .recipe__grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.panel {
+  padding: 1.5rem;
+  border: 1px solid var(--app-border);
+  border-radius: var(--app-r-lg);
+  background: var(--app-surface);
+  box-shadow: var(--app-shadow-sm);
+}
+
+.panel h2 {
+  margin: 0 0 1rem;
+  padding-bottom: 0.6rem;
+  font-size: 1.15rem;
+  border-bottom: 2px solid var(--app-primary-soft);
+}
+
+.ingredients {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.ingredients li {
+  display: flex;
+  gap: 0.75rem;
+  padding: 0.55rem 0;
+  border-bottom: 1px dashed var(--app-border);
+}
+
+.ingredients li:last-child {
+  border-bottom: 0;
+}
+
+.ingredients__qty {
+  flex-shrink: 0;
+  min-width: 4.5rem;
+  font-weight: 700;
+  color: var(--app-primary-ink);
+}
+
+.ingredients__name {
+  color: var(--app-text);
+}
+
+.steps {
+  list-style: none;
+  counter-reset: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.steps li {
+  display: flex;
+  gap: 0.85rem;
+  align-items: flex-start;
+}
+
+.steps__num {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.85rem;
+  height: 1.85rem;
+  border-radius: var(--app-r-pill);
+  /* CTA ramp, not the decorative one: aria-hidden keeps these numerals out of the accessibility tree
+     but they are still read by everyone looking at the screen, so they owe the same 4.5:1 as any text. */
+  background: var(--app-gradient-cta);
+  color: #fff;
+  font-family: var(--app-font-display);
+  font-size: 0.9rem;
+  font-weight: 600;
+  box-shadow: 0 3px 8px rgba(224, 90, 43, 0.28);
+}
+
+.steps__text {
+  padding-top: 0.2rem;
+  line-height: 1.6;
+}
+
+.empty {
+  margin-top: 2.5rem;
+  padding: 2rem;
+  text-align: center;
+  color: var(--app-text-muted);
+  background: var(--app-surface);
+  border: 1px dashed var(--app-border-strong);
+  border-radius: var(--app-r-lg);
+}
+
+.empty a {
+  color: var(--app-primary-ink);
+  font-weight: 600;
+}
+
+/* The error panel itself (.empty--error and friends) is shared with the list view — see styles.css. */

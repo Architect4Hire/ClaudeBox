@@ -1,21 +1,20 @@
-<Project Sdk="Aspire.AppHost.Sdk/13.4.6">
+<!-- The AppHost SDK version is pinned in global.json's msbuild-sdks: an MSBuild SDK is resolved
+     before Directory.Packages.props is read, so CPM cannot centralize it. -->
+<Project Sdk="Aspire.AppHost.Sdk">
 
   <ItemGroup>
     <ProjectReference Include="..\RecipeBox.ApiService\RecipeBox.ApiService.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Aspire.Hosting.Azure.Storage" Version="13.4.6" />
-    <PackageReference Include="Aspire.Hosting.JavaScript" Version="13.4.6" />
-    <PackageReference Include="Aspire.Hosting.PostgreSQL" Version="13.4.6" />
-    <PackageReference Include="Aspire.Hosting.Redis" Version="13.4.6" />
+    <PackageReference Include="Aspire.Hosting.Azure.Storage" />
+    <PackageReference Include="Aspire.Hosting.JavaScript" />
+    <PackageReference Include="Aspire.Hosting.PostgreSQL" />
+    <PackageReference Include="Aspire.Hosting.Redis" />
   </ItemGroup>
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFramework>net10.0</TargetFramework>
-    <ImplicitUsings>enable</ImplicitUsings>
-    <Nullable>enable</Nullable>
     <UserSecretsId>a5decab2-eadc-4ded-9ec1-6bac7c6763e1</UserSecretsId>
   </PropertyGroup>
 

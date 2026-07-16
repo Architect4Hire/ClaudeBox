@@ -15,7 +15,7 @@ RecipeBox is a recipe site built to showcase real-world skills with **Aspire + A
 
 - **Orchestration:** Aspire 13 (AppHost + ServiceDefaults) on .NET 10
 - **Backend:** ASP.NET Core Web API · EF Core (Npgsql) — `src/RecipeBox.ApiService/`
-- **Frontend:** Angular (standalone components, strict TS) — `src/RecipeBox/`, run via `AddJavaScriptApp`
+- **Frontend:** Angular (standalone components, strict TS) — `src/web/`, run via `AddJavaScriptApp`
 - **Data/infra (local containers via Aspire):** PostgreSQL, and a cache if/when needed
 
 **Layout**
@@ -38,11 +38,11 @@ src/
 
 - Whole system (repo root or the AppHost folder): run everything + dashboard `aspire run` · add a resource package `aspire add <resource>`
 - Backend (`src/RecipeBox.ApiService/`): `dotnet test` · `dotnet ef migrations add <Name>` · `dotnet ef database update`
-- Frontend (`src/RecipeBox/`): `npm install` · `ng test` · `ng build`
+- Frontend (`src/web/`): `npm install` · `ng test` · `ng build`
 
 ## Restrictions
 
-- Don't hardcode connection strings or `localhost:port` — wire through the AppHost and service discovery / Aspire-injected config.
+- Don't hardcode connection strings or `localhost:port` — wire through the AppHost and service discovery / Aspire-injected config. **One sanctioned exception:** `.mcp.json`'s `appdb` server names `http://localhost:8765/sse`. MCP client config is read before the AppHost runs and has no service discovery to read from, so the address has to be literal — which is exactly why the AppHost *pins* that port (`WithEndpoint("http", e => e.Port = 8765)` in [AppHost.cs](src/RecipeBox.AppHost/AppHost.cs)) instead of letting Aspire assign a random one. The pin and the literal are two halves of one decision: change one, change the other. Nothing else gets to hardcode an address.
 - Don't put business logic in the AppHost; it stays declarative.
 - Don't run `ng serve` by hand — Aspire launches the client via `AddJavaScriptApp`.
 - Don't hand-edit generated EF migrations except to review them.

@@ -1,0 +1,241 @@
+.list-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.list-header h1 {
+  margin: 0;
+  font-size: clamp(1.9rem, 4vw, 2.6rem);
+}
+
+.list-header__sub {
+  margin: 0.35rem 0 0;
+  color: var(--app-text-muted);
+  font-size: 0.95rem;
+}
+
+.new-button {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.6rem 1.15rem;
+  border-radius: var(--app-r-pill);
+  background: var(--app-gradient-cta);
+  color: #fff;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.92rem;
+  box-shadow: 0 6px 16px rgba(224, 90, 43, 0.28);
+  transition:
+    transform var(--app-fast) var(--app-ease),
+    box-shadow var(--app-fast) var(--app-ease),
+    filter var(--app-fast) var(--app-ease);
+}
+
+.new-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 22px rgba(224, 90, 43, 0.34);
+  filter: saturate(1.05);
+}
+
+.new-button:active {
+  transform: translateY(0);
+}
+
+.new-button__plus {
+  font-size: 1.15rem;
+  line-height: 1;
+  margin-top: -1px;
+}
+
+.card-grid {
+  list-style: none;
+  padding: 0;
+  margin: 1.5rem 0 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 1.25rem;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  border: 1px solid var(--app-border);
+  border-radius: var(--app-r-lg);
+  background: var(--app-surface);
+  color: inherit;
+  text-decoration: none;
+  box-shadow: var(--app-shadow-sm);
+  transition:
+    box-shadow var(--app-med) var(--app-ease),
+    transform var(--app-med) var(--app-ease),
+    border-color var(--app-med) var(--app-ease);
+}
+
+.card:hover {
+  box-shadow: var(--app-shadow-lg);
+  transform: translateY(-4px);
+  border-color: var(--app-border-strong);
+}
+
+.card__band {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* Taller than the strip this was when it only held an emoji: it now carries a photograph, and the
+     gradient fallback keeps the same height so a grid mixing the two still lines up. */
+  height: 150px;
+  background:
+    radial-gradient(120% 140% at 0% 0%, rgba(255, 255, 255, 0.4), transparent 45%),
+    var(--app-gradient);
+  position: relative;
+  overflow: hidden;
+}
+
+.card__image {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  /* cover, because the seed photos are a mix of landscape, square and portrait: fitting them would
+     letterbox the tall ones against the gradient. Cropping to the centre is the lesser evil — food
+     photos put the food there. */
+  object-fit: cover;
+  /* Above the band's dotted overlay, which is only there for the emoji fallback. */
+  z-index: 1;
+  transition: transform var(--app-med) var(--app-ease);
+}
+
+/* The same lift the emoji has, so a card with a photo and a card without behave alike on hover. */
+.card:hover .card__image {
+  transform: scale(1.05);
+}
+
+.card__band::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(rgba(255, 255, 255, 0.35) 1px, transparent 1px);
+  background-size: 14px 14px;
+  opacity: 0.35;
+}
+
+.card__band-emoji {
+  font-size: 2rem;
+  filter: drop-shadow(0 2px 3px rgba(76, 30, 10, 0.28));
+  transition: transform var(--app-med) var(--app-ease);
+  z-index: 1;
+}
+
+.card:hover .card__band-emoji {
+  transform: scale(1.12) rotate(-6deg);
+}
+
+.card__body {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  padding: 1.15rem 1.15rem 1.25rem;
+}
+
+.card__title {
+  margin: 0 0 0.4rem;
+  font-size: 1.2rem;
+}
+
+.card__description {
+  margin: 0 0 0.9rem;
+  color: var(--app-text-muted);
+  font-size: 0.9rem;
+  line-height: 1.55;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.card__meta {
+  display: flex;
+  gap: 0.5rem;
+  margin: auto 0 0;
+  padding-top: 0.9rem;
+}
+
+.card__meta > div {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.1rem;
+  padding: 0.5rem 0.25rem;
+  border-radius: var(--app-r-sm);
+  background: var(--app-surface-muted);
+  text-align: center;
+}
+
+.card__meta dt {
+  order: 2;
+  font-size: 0.68rem;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--app-text-subtle);
+  font-weight: 500;
+}
+
+.card__meta dd {
+  order: 1;
+  margin: 0;
+  font-family: var(--app-font-display);
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--app-text);
+}
+
+.card__tags {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  padding: 0;
+  margin: 0.9rem 0 0;
+}
+
+.card__tags li {
+  padding: 0.2rem 0.6rem;
+  border-radius: var(--app-r-pill);
+  background: var(--app-primary-soft);
+  color: var(--app-primary-ink);
+  font-size: 0.73rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+}
+
+.list-count {
+  margin: 1.5rem 0 0;
+  color: var(--app-text-muted);
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+}
+
+/* The grid's own top margin already spaces it from the search box; the count now sits between. */
+.list-count + .card-grid {
+  margin-top: 0.75rem;
+}
+
+.empty {
+  margin-top: 2.5rem;
+  padding: 2rem;
+  text-align: center;
+  color: var(--app-text-muted);
+  background: var(--app-surface);
+  border: 1px dashed var(--app-border-strong);
+  border-radius: var(--app-r-lg);
+}
+
+/* The error panel itself (.empty--error and friends) is shared with the detail view — see styles.css. */

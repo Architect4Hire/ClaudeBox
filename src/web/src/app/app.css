@@ -1,0 +1,71 @@
+:host {
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+  background:
+    radial-gradient(1200px 480px at 100% -10%, rgba(242, 166, 61, 0.12), transparent 60%),
+    radial-gradient(900px 420px at -10% 0%, rgba(224, 90, 43, 0.08), transparent 55%), var(--app-bg);
+  color: var(--app-text);
+}
+
+.app-header {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  padding: 0.85rem 1.5rem;
+  border-bottom: 1px solid var(--app-border);
+  background: rgba(255, 255, 255, 0.72);
+  backdrop-filter: saturate(180%) blur(12px);
+  -webkit-backdrop-filter: saturate(180%) blur(12px);
+}
+
+.app-header__brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: var(--app-font-display);
+  font-size: 1.3rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--app-text);
+  text-decoration: none;
+  transition: opacity var(--app-fast) var(--app-ease);
+}
+
+.app-header__brand:hover {
+  opacity: 0.82;
+}
+
+.app-header__logo {
+  font-size: 1.35rem;
+  line-height: 1;
+}
+
+/* Gradient the wordmark only, so the emoji keeps its colour */
+.app-header__word {
+  background: var(--app-gradient);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.app-main {
+  width: 100%;
+  max-width: 1040px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem 4rem;
+  animation: rb-fade-in var(--app-med) var(--app-ease) both;
+}
+
+@keyframes rb-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

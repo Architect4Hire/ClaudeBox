@@ -45,7 +45,7 @@ Map the target to its skill by location:
 | Target | Skill |
 | --- | --- |
 | `src/RecipeBox.ApiService/` | add-endpoint |
-| `src/RecipeBox/` (Angular) | new-component |
+| `src/web/` (Angular) | new-component |
 | `src/RecipeBox.AppHost/`, or a service consuming a resource | add-aspire-resource |
 
 A single feature can span two skills (an endpoint plus the component that calls it). Audit each side
@@ -101,7 +101,7 @@ than assuming either way — you cannot run anything.
 One line per finding, grouped by skill, each naming the checklist item it breaks:
 
 `add-endpoint → RecipeFacade.cs:34 → "Facade owns validation + caching; no orchestration, mapping,
-or EF" — facade injects RecipeDbContext and queries it directly, bypassing IRecipeBusiness`
+or EF" — facade injects AppDbContext and queries it directly, bypassing IRecipeBusiness`
 
 Order by severity: layering violations and CLAUDE.md Restrictions first (they are architectural and
 compound), then missing artifacts, then naming/location nits. Close with a one-line verdict.

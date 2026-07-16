@@ -17,7 +17,7 @@ the API's boundary types against their TypeScript mirrors and report drift. You 
 - **C# (source of truth):** `src/RecipeBox.ApiService/Managers/Models/ViewModels/` and
   `.../ServiceModels/`, including the nested records declared in the same files
   (`IngredientServiceModel`, `CreateStepViewModel`, …).
-- **TypeScript (mirror):** `src/RecipeBox/src/app/models/recipe.models.ts`.
+- **TypeScript (mirror):** `src/web/src/app/models/recipe.models.ts`.
 
 The C# side wins. If they disagree, the TypeScript is what's wrong — report it that way.
 

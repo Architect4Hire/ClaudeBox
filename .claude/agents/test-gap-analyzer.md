@@ -12,7 +12,7 @@ identify gaps in test coverage and report them — you do not write or edit test
 
 ## How to analyze
 1. Map changed code to its tests (services/controllers in `RecipeBox.ApiService`, components and
-   services in `client/`).
+   services in `src/web/`).
 2. Identify uncovered paths: validation/error branches, empty and boundary inputs (e.g. a recipe
    with no ingredients), and failure modes.
 3. Prioritize by risk — untested validation, error handling, and data-shaping matter more than

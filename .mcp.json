@@ -10,7 +10,7 @@
       "command": "aspire",
       "args": ["agent", "mcp"]
     },
-    "recipesdb": {
+    "appdb": {
       "type": "sse",
       "url": "http://localhost:8765/sse"
     }

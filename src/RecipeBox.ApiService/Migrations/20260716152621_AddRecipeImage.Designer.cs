@@ -10,7 +10,7 @@ using RecipeBox.ApiService.Data;
 
 namespace RecipeBox.ApiService.Migrations
 {
-    [DbContext(typeof(RecipeDbContext))]
+    [DbContext(typeof(AppDbContext))]
     [Migration("20260716152621_AddRecipeImage")]
     partial class AddRecipeImage
     {

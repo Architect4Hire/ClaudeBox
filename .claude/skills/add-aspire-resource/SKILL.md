@@ -16,7 +16,7 @@ never hardcode connection details.
    `Aspire.Hosting.<Resource>` package). Confirm the exact package name at https://aspire.dev.
 2. **Declare the resource in the AppHost.** e.g.
    `var cache = builder.AddRedis("cache");` or
-   `var db = builder.AddPostgres("pg").AddDatabase("recipesdb");`
+   `var db = builder.AddPostgres("pg").AddDatabase("appdb");`
    Keep resources as local containers for this PoC.
 3. **Wire it into consumers.** Add `.WithReference(cache)` to the projects that use it, and
    `.WaitFor(cache)` so they start after it's healthy.

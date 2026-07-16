@@ -8,8 +8,8 @@ paths:
 The AppHost is the single source of truth for the application model. Keep it declarative.
 
 - **Declare every resource here.** Postgres, cache, the API, and the Angular app are all added
-  in the AppHost (e.g. `AddPostgres(...).AddDatabase("recipesdb")`, `AddProject<...>("api")`,
-  `AddJavaScriptApp("web", "../RecipeBox", "start")`). Nothing outside the AppHost invents infrastructure.
+  in the AppHost (e.g. `AddPostgres(...).AddDatabase("appdb")`, `AddProject<...>("api")`,
+  `AddJavaScriptApp("web", "../web", "start")`). Nothing outside the AppHost invents infrastructure.
 - **Local-first.** Backing resources run as local containers for development — no cloud/Azure
   resources in this PoC. An *emulator-backed* Azure resource is in bounds, because it is a local
   container: `AddAzureStorage("storage").RunAsEmulator(...)` runs Azurite, exactly as `AddPostgres`

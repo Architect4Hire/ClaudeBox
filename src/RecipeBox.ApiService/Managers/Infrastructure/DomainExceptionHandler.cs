@@ -1,7 +1,6 @@
 using FluentValidation;
 using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
-using RecipeBox.ApiService.Managers.Models.Domain;
 
 namespace RecipeBox.ApiService.Managers.Infrastructure;
 
@@ -10,9 +9,11 @@ namespace RecipeBox.ApiService.Managers.Infrastructure;
 /// layer has to hand-build error responses:
 /// <list type="bullet">
 ///   <item><see cref="ValidationException"/> → 400 with per-field errors.</item>
-///   <item><see cref="RecipeNameConflictException"/> → 409.</item>
+///   <item><see cref="DomainConflictException"/> → 409, titled by the exception itself.</item>
 /// </list>
-/// Anything else is left for the default handling (500).
+/// Anything else is left for the default handling (500). This handler is deliberately domain-free:
+/// it maps the two base types above, so a new domain exception is wired up by deriving from
+/// <see cref="DomainConflictException"/> — this file is never edited to add one.
 /// </summary>
 public class DomainExceptionHandler(IProblemDetailsService problemDetails) : IExceptionHandler
 {
@@ -36,11 +37,11 @@ public class DomainExceptionHandler(IProblemDetailsService problemDetails) : IEx
                 };
                 break;
 
-            case RecipeNameConflictException conflict:
+            case DomainConflictException conflict:
                 problem = new ProblemDetails
                 {
                     Status = StatusCodes.Status409Conflict,
-                    Title = "Recipe name already exists.",
+                    Title = conflict.Title,
                     Detail = conflict.Message,
                 };
                 break;

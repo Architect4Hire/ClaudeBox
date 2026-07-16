@@ -7,11 +7,11 @@ namespace RecipeBox.ApiService.Data;
 
 /// <summary>
 /// EF Core implementation of <see cref="IRecipeRepository"/> against the Aspire-provided
-/// <see cref="RecipeDbContext"/>. Queries only — no business rules, caching, or validation.
+/// <see cref="AppDbContext"/>. Queries only — no business rules, caching, or validation.
 /// </summary>
-public class RecipeRepository(RecipeDbContext db) : IRecipeRepository
+public class RecipeRepository(AppDbContext db) : IRecipeRepository
 {
-    private readonly RecipeDbContext _db = db;
+    private readonly AppDbContext _db = db;
 
     /// <summary>
     /// Case-insensitive unique index on recipe name, created via raw SQL in the

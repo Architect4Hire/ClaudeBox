@@ -8,7 +8,7 @@ description: >
 
 # Add an Angular component
 
-Work in `src/RecipeBox/`.
+Work in `src/web/`.
 
 1. **Generate.** `ng generate component <feature>/<name>` — standalone, kebab-case files.
 2. **Types.** Define/reuse a model interface that mirrors the backend ServiceModels exactly. No `any`.

@@ -7,7 +7,7 @@ namespace RecipeBox.ApiService.Data;
 
 /// <summary>
 /// <see cref="IRecipeImageStore"/> over the Aspire-provided <see cref="BlobContainerClient"/>, keyed
-/// to the "recipe-images" AppHost resource (see Program.cs). Blob calls only — no business rules,
+/// to the "uploads" AppHost resource (see Program.cs). Blob calls only — no business rules,
 /// caching, or validation, mirroring how <see cref="RecipeRepository"/> holds only EF queries.
 /// <para>The container itself is created by the AppHost: <c>RunAsEmulator</c> provisions it on
 /// startup, so there is deliberately no CreateIfNotExists call here.</para>

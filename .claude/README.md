@@ -15,13 +15,17 @@ is as much the point of the repo as the app itself.
 | `settings.json` | Shared project settings (incl. hook wiring). Committed. | Read at session start. |
 | `rules/aspire.md` | AppHost/orchestration conventions. Path-scoped to the AppHost. | Loads when Claude touches AppHost/ServiceDefaults. |
 | `rules/backend.md` | ASP.NET Core + EF Core conventions. Path-scoped to the API. | Loads when Claude touches the API. |
-| `rules/frontend.md` | Angular conventions. Path-scoped to `client/`. | Loads when Claude touches the client. |
+| `rules/frontend.md` | Angular conventions. Path-scoped to `src/web/`. | Loads when Claude touches the web app. |
 | `skills/add-endpoint/` | Playbook for adding an API endpoint. | On demand, when the task matches. |
 | `skills/new-component/` | Playbook for adding an Angular component. | On demand, when the task matches. |
 | `skills/add-aspire-resource/` | Playbook for adding a locally-orchestrated resource. | On demand, when the task matches. |
+| `skills/aspire*/`, `skills/playwright-cli/` | Six **vendored** skills (`aspire`, `aspire-init`, `aspire-orchestration`, `aspire-deployment`, `aspire-monitoring`, `playwright-cli`). Not ours — kept as shipped so they can be re-vendored. | On demand, when the task matches. |
 | `agents/code-reviewer.md` | Read-only reviewer subagent (Aspire-aware). | When delegated, or `@code-reviewer`. |
 | `agents/test-gap-analyzer.md` | Read-only test-gap subagent. | When delegated, or `@test-gap-analyzer`. |
+| `agents/api-contract-checker.md` | Read-only subagent: finds drift between the API's boundary types and the Angular models mirroring them. | When delegated, or `@api-contract-checker`. |
+| `agents/skills-evals.md` | Read-only subagent: audits whether generated code actually followed the skills. | When delegated, or `@skills-evals`. |
 | `hooks/format.sh` | Formats the edited file after each edit. | Runs via the `PostToolUse` hook in `settings.json`. |
+| `hooks/secret-guard.sh` | Blocks edits that would commit anything credential-shaped. | Runs via the `PreToolUse` hook in `settings.json`. |
 
 Rule of thumb:
 - **Rule / CLAUDE.md** = something Claude should *know*.

@@ -8,7 +8,7 @@ paths:
   business logic or EF queries in controllers.
 - **DTOs at the boundary.** Never return EF entities from an endpoint — map to a DTO.
 - **DbContext via Aspire.** Register the EF Core context through the Aspire Npgsql integration
-  keyed to the AppHost resource name (e.g. the `recipesdb` database), not by reading a raw
+  keyed to the AppHost resource name (e.g. the `appdb` database), not by reading a raw
   connection string from `appsettings.json`.
 - **Async all the way.** `async Task<...>` with `await`; never `.Result` or `.Wait()`.
 - **Validate at the edge.** Data annotations or FluentValidation; on failure return the shared

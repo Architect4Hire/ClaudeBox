@@ -24,7 +24,7 @@ RecipeBox.ApiService/
 ├── Controllers/            # <Feature>Controller.cs — HTTP surface (ViewModel in, ServiceModel out)
 ├── Facade/                 # I<Feature>Facade  + <Feature>Facade   (validate VM + cache + return SM)
 ├── Business/               # I<Feature>Business + <Feature>Business (VM→domain, domain rules, domain→SM)
-├── Data/                   # RecipeDbContext
+├── Data/                   # AppDbContext
 │                           #   I<Feature>DataLayer  + <Feature>DataLayer  (compose data operations)
 │                           #   I<Feature>Repository + <Feature>Repository (EF queries)
 ├── Managers/
@@ -207,4 +207,3 @@ steps, create/update a recipe, manage categories.
       layer's call-order/short-circuit assertions for any composed operation, and a real-database
       rollback test for any atomic one (`dotnet test`)
 - [ ] Migration reviewed and committed, and `has-pending-model-changes` is clean (if the model changed)
-```

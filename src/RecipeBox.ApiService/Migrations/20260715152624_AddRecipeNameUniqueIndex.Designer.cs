@@ -10,7 +10,7 @@ using RecipeBox.ApiService.Data;
 
 namespace RecipeBox.ApiService.Migrations
 {
-    [DbContext(typeof(RecipeDbContext))]
+    [DbContext(typeof(AppDbContext))]
     [Migration("20260715152624_AddRecipeNameUniqueIndex")]
     partial class AddRecipeNameUniqueIndex
     {

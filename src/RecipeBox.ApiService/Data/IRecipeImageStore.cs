@@ -3,7 +3,7 @@ using RecipeBox.ApiService.Managers.Models.Domain;
 namespace RecipeBox.ApiService.Data;
 
 /// <summary>
-/// The recipe-images blob container, as the layers above it are allowed to see it. Sits beside
+/// The uploads blob container, as the layers above it are allowed to see it. Sits beside
 /// <see cref="IRecipeRepository"/> as the second store this feature persists to: the repository owns
 /// the row, this owns the bytes.
 /// <para>It exists to keep a vendor SDK off the surface. No <c>BlobContainerClient</c>,

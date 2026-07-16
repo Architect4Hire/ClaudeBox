@@ -1,0 +1,45 @@
+.category-filter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-bottom: 0.25rem;
+}
+
+.chip {
+  padding: 0.45rem 0.95rem;
+  border: 1px solid var(--app-border-strong);
+  border-radius: var(--app-r-pill);
+  background: var(--app-surface);
+  color: var(--app-text-muted);
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  box-shadow: var(--app-shadow-sm);
+  transition:
+    color var(--app-fast) var(--app-ease),
+    background var(--app-fast) var(--app-ease),
+    border-color var(--app-fast) var(--app-ease),
+    transform var(--app-fast) var(--app-ease);
+}
+
+.chip:hover {
+  border-color: var(--app-primary);
+  color: var(--app-primary-ink);
+  transform: translateY(-1px);
+}
+
+.chip:active {
+  transform: translateY(0);
+}
+
+.chip--active {
+  background: var(--app-gradient-cta);
+  border-color: transparent;
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(224, 90, 43, 0.26);
+}
+
+.chip--active:hover {
+  color: #fff;
+}

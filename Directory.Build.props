@@ -1,0 +1,17 @@
+<Project>
+
+  <!--
+    Settings every project in this repo shares. Imported automatically by MSBuild from the directory
+    tree above each .csproj, so a new project inherits the target framework and language settings
+    without restating them.
+
+    Deliberately NOT here: TreatWarningsAsErrors. A warning should stop the build in CI, not while
+    someone is mid-edit locally — CI passes `-warnaserror` instead (see .github/workflows/ci.yml).
+  -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+  </PropertyGroup>
+
+</Project>

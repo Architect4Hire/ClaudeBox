@@ -24,7 +24,18 @@ case "$file" in
     dotnet format --include "$file" >/dev/null 2>&1 || true
     ;;
   *.ts|*.html|*.scss|*.css|*.json)
-    npx prettier --write "$file" >/dev/null 2>&1 || true
+    # prettier is a devDependency of the Angular app, not of the repo root. A bare `npx prettier`
+    # here finds no node_modules at the root and silently downloads a floating version from the
+    # registry — so the hook would format with a different prettier than the app pins, and would need
+    # the network to run at all. Invoke the app's own pinned binary instead.
+    prettier="$(git rev-parse --show-toplevel)/src/web/node_modules/.bin/prettier"
+    if [ -x "$prettier" ]; then
+      "$prettier" --write "$file" >/dev/null 2>&1 || true
+    else
+      # Not silently: a missing formatter should be fixable, not invisible. Still exit 0 — a format
+      # hook never blocks an edit.
+      echo "format.sh: prettier not installed; skipped $file (run: npm ci --prefix src/web)" >&2
+    fi
     ;;
 esac
 
