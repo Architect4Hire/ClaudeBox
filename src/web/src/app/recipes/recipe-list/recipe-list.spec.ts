@@ -41,10 +41,7 @@ describe('RecipeList', () => {
 
     await TestBed.configureTestingModule({
       imports: [RecipeList],
-      providers: [
-        provideRouter([]),
-        { provide: RecipeService, useValue: { list, imageUrl } },
-      ],
+      providers: [provideRouter([]), { provide: RecipeService, useValue: { list, imageUrl } }],
     }).compileComponents();
 
     fixture = TestBed.createComponent(RecipeList);
@@ -302,9 +299,7 @@ describe('RecipeList (pagination)', () => {
 });
 
 describe('RecipeList (failure)', () => {
-  async function createWith(
-    list: ReturnType<typeof vi.fn>,
-  ): Promise<ComponentFixture<RecipeList>> {
+  async function createWith(list: ReturnType<typeof vi.fn>): Promise<ComponentFixture<RecipeList>> {
     await TestBed.configureTestingModule({
       imports: [RecipeList],
       providers: [provideRouter([]), { provide: RecipeService, useValue: { list } }],
@@ -334,12 +329,14 @@ describe('RecipeList (failure)', () => {
     const fixture = await createWith(list);
     expect((fixture.nativeElement as HTMLElement).querySelector('.empty__retry')).toBeTruthy();
 
-    (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('.empty__retry')!.click();
+    (fixture.nativeElement as HTMLElement)
+      .querySelector<HTMLButtonElement>('.empty__retry')!
+      .click();
     await fixture.whenStable();
 
-    expect((fixture.nativeElement as HTMLElement).querySelector('.card__title')?.textContent).toContain(
-      'Pancakes',
-    );
+    expect(
+      (fixture.nativeElement as HTMLElement).querySelector('.card__title')?.textContent,
+    ).toContain('Pancakes');
   });
 
   /**
@@ -361,9 +358,9 @@ describe('RecipeList (failure)', () => {
     await fixture.whenStable();
 
     expect(list).toHaveBeenLastCalledWith('Dessert', undefined);
-    expect((fixture.nativeElement as HTMLElement).querySelector('.card__title')?.textContent).toContain(
-      'Cake',
-    );
+    expect(
+      (fixture.nativeElement as HTMLElement).querySelector('.card__title')?.textContent,
+    ).toContain('Cake');
   });
 
   /**
@@ -374,7 +371,9 @@ describe('RecipeList (failure)', () => {
     let call = 0;
     // The options request is the component's first call; the grid's is the second.
     const list = vi.fn(() =>
-      ++call === 1 ? throwError(() => new Error('boom')) : of([summary(1, 'Pancakes', ['Breakfast'])]),
+      ++call === 1
+        ? throwError(() => new Error('boom'))
+        : of([summary(1, 'Pancakes', ['Breakfast'])]),
     );
     const fixture = await createWith(list);
     const el = fixture.nativeElement as HTMLElement;

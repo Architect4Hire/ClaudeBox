@@ -24,7 +24,10 @@ function strip(fixture: ComponentFixture<Pagination>): string[] {
   ).map((el) => el.textContent!.trim());
 }
 
-function step(fixture: ComponentFixture<Pagination>, label: 'Previous' | 'Next'): HTMLButtonElement {
+function step(
+  fixture: ComponentFixture<Pagination>,
+  label: 'Previous' | 'Next',
+): HTMLButtonElement {
   return Array.from(
     (fixture.nativeElement as HTMLElement).querySelectorAll<HTMLButtonElement>('.pagination__step'),
   ).find((b) => b.textContent!.includes(label))!;
@@ -59,7 +62,9 @@ describe('Pagination', () => {
 
   it('marks only the current page with aria-current', async () => {
     const fixture = await setup(2, 5);
-    const current = (fixture.nativeElement as HTMLElement).querySelectorAll('[aria-current="page"]');
+    const current = (fixture.nativeElement as HTMLElement).querySelectorAll(
+      '[aria-current="page"]',
+    );
 
     expect(current.length).toBe(1);
     expect(current[0].textContent!.trim()).toBe('2');

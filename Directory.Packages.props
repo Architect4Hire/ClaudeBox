@@ -11,6 +11,9 @@
   -->
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
+    <!-- Lets the PackageVersion entries below raise a *transitive* dependency's version without
+         faking a direct PackageReference to it. Used for the security pins at the bottom. -->
+    <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
     <AspireVersion>13.4.6</AspireVersion>
   </PropertyGroup>
 
@@ -42,6 +45,26 @@
     <PackageVersion Include="OpenTelemetry.Instrumentation.AspNetCore" Version="1.15.2" />
     <PackageVersion Include="OpenTelemetry.Instrumentation.Http" Version="1.15.1" />
     <PackageVersion Include="OpenTelemetry.Instrumentation.Runtime" Version="1.15.1" />
+  </ItemGroup>
+
+  <!--
+    Security pins on transitive packages. Nothing references these directly: they arrive under
+    Microsoft.AspNetCore.OpenApi and Microsoft.EntityFrameworkCore.Sqlite, which still resolve
+    known-vulnerable versions (NU1903). Transitive pinning (enabled above) lifts them to a fixed
+    version without a fake direct dependency.
+
+    CI builds with -warnaserror, so a new advisory against any of these turns the build red — which
+    is the point. Drop each pin once the parent package ships a fixed version on its own.
+
+      Microsoft.OpenApi   2.0.0  -> GHSA-v5pm-xwqc-g5wc (affects <= 2.7.4, fixed in 2.7.5)
+      SQLitePCLRaw.*      2.1.11 -> GHSA-2m69-gcr7-jv3q (affects <= 2.1.11)
+  -->
+  <ItemGroup>
+    <PackageVersion Include="Microsoft.OpenApi" Version="2.7.5" />
+    <PackageVersion Include="SQLitePCLRaw.bundle_e_sqlite3" Version="2.1.12" />
+    <PackageVersion Include="SQLitePCLRaw.core" Version="2.1.12" />
+    <PackageVersion Include="SQLitePCLRaw.lib.e_sqlite3" Version="2.1.12" />
+    <PackageVersion Include="SQLitePCLRaw.provider.e_sqlite3" Version="2.1.12" />
   </ItemGroup>
 
   <!-- Testing. -->

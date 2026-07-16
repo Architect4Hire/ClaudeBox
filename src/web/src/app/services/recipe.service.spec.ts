@@ -1,9 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { provideHttpClient } from '@angular/common/http';
-import {
-  HttpTestingController,
-  provideHttpClientTesting,
-} from '@angular/common/http/testing';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 
 import { RecipeService } from './recipe.service';
 import {
@@ -150,7 +147,10 @@ describe('RecipeService', () => {
       description: 'Tangy',
       servings: 8,
       ingredients: [{ name: 'Starter', quantity: 1, unit: 'cup' }],
-      steps: [{ order: 1, instruction: 'Feed' }, { order: 2, instruction: 'Bake' }],
+      steps: [
+        { order: 1, instruction: 'Feed' },
+        { order: 2, instruction: 'Bake' },
+      ],
       categories: ['Baking'],
       tags: ['rustic'],
     };
@@ -160,7 +160,10 @@ describe('RecipeService', () => {
       description: 'Tangy',
       servings: 8,
       ingredients: [{ name: 'Starter', quantity: 1, unit: 'cup' }],
-      steps: [{ order: 1, instruction: 'Feed' }, { order: 2, instruction: 'Bake' }],
+      steps: [
+        { order: 1, instruction: 'Feed' },
+        { order: 2, instruction: 'Bake' },
+      ],
       categories: [],
       tags: [],
       hasImage: false,
@@ -196,7 +199,9 @@ describe('RecipeService', () => {
   });
 
   it('uploadImage() PUTs the file as multipart form data', () => {
-    const file = new File([new Uint8Array([0xff, 0xd8, 0xff])], 'photo.jpg', { type: 'image/jpeg' });
+    const file = new File([new Uint8Array([0xff, 0xd8, 0xff])], 'photo.jpg', {
+      type: 'image/jpeg',
+    });
 
     service.uploadImage(7, file).subscribe();
 

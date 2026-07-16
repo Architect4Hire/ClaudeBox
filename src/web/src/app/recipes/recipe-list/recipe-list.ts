@@ -29,9 +29,7 @@ export const PAGE_SIZE = 12;
 
 /** The outcome of the list request, before paging is applied. */
 type ListState =
-  | { status: 'loading' }
-  | { status: 'loaded'; recipes: RecipeSummaryDto[] }
-  | { status: 'error' };
+  { status: 'loading' } | { status: 'loaded'; recipes: RecipeSummaryDto[] } | { status: 'error' };
 
 /**
  * Everything the template renders, as one value. Folding the request state, the filter state and the

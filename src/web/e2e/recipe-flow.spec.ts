@@ -162,7 +162,11 @@ test('create, view, edit, and filter a recipe', async ({ page }) => {
 
     // The header renders before the cards resolve, so gate on a card — count() never auto-waits
     // and would otherwise read 0 off the "Loading recipes…" state.
-    await expect(cards(page).filter({ hasText: recipeName })).toBeVisible();
+    //
+    // Gate on *any* card, not this run's: the grid pages at PAGE_SIZE and this run's recipe sorts
+    // wherever its name falls, so it is usually not on page 1 at all. Finding it unfiltered is the
+    // filter step's job, below.
+    await expect(cards(page).first()).toBeVisible();
 
     const unfilteredCount = await cards(page).count();
     expect(unfilteredCount).toBeGreaterThan(1);

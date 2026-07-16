@@ -1,0 +1,105 @@
+name: E2E
+
+# Deliberately NOT on pull_request. This job needs the aspire CLI, Docker, Postgres, Redis and
+# Azurite all up at once; that is a lot of moving parts to gate every PR on. A showcase repo wants a
+# badge that means something, and a flaky e2e run on every push undermines the one in ci.yml. It runs
+# nightly and on demand instead — a real signal, just not a blocking one.
+on:
+  workflow_dispatch:
+  schedule:
+    # 03:17 UTC — off the hour, where the scheduler is less contended.
+    - cron: '17 3 * * *'
+
+concurrency:
+  group: e2e-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  e2e:
+    name: e2e (aspire run + playwright)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: src/web/package-lock.json
+
+      - name: Install aspire CLI
+        run: |
+          curl -sSL https://aspire.dev/install.sh | bash
+          echo "$HOME/.aspire/bin" >> "$GITHUB_PATH"
+
+      - name: Install web dependencies
+        run: npm ci
+        working-directory: src/web
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+        working-directory: src/web
+
+      - name: Start the app
+        run: nohup aspire run --non-interactive > "$RUNNER_TEMP/aspire.log" 2>&1 &
+
+      # The AppHost declares the Angular app as `.WithHttpEndpoint(env: "PORT")` with no fixed port,
+      # so Aspire assigns a fresh one every run — there is nothing to hardcode. Resolve it once here
+      # and export APP_WEB_URL, which keeps playwright.config.ts's own `aspire describe` discovery
+      # (and its 120s timeout) off the critical path of every spec file.
+      #
+      # `aspire describe` also emits generated credentials for the backing resources, so the document
+      # is piped straight into a parser and never echoed.
+      - name: Wait for the web app and resolve its URL
+        run: |
+          apphost=src/RecipeBox.AppHost/RecipeBox.AppHost.csproj
+          for i in $(seq 1 60); do
+            url=$(aspire describe --apphost "$apphost" --format Json 2>/dev/null \
+              | python3 -c '
+          import json, sys
+          try:
+              doc = json.load(sys.stdin)
+          except Exception:
+              sys.exit(0)
+          for r in doc.get("resources", []):
+              if r.get("displayName") == "web" and r.get("state") == "Running":
+                  for u in r.get("urls") or []:
+                      if u.get("name") == "http" and u.get("url"):
+                          print(u["url"]); sys.exit(0)
+          ' || true)
+            if [ -n "$url" ] && curl -sf "$url" >/dev/null 2>&1; then
+              echo "web app is up at $url"
+              echo "APP_WEB_URL=$url" >> "$GITHUB_ENV"
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "::error::web app did not reach Running within 5 minutes"
+          exit 1
+
+      - name: Run e2e tests
+        run: npm run e2e
+        working-directory: src/web
+
+      # The AppHost log is the only place a resource failure (a container that never went healthy,
+      # a migration that threw) is visible once the job is over.
+      - name: Upload AppHost log
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: aspire-log
+          path: ${{ runner.temp }}/aspire.log
+          if-no-files-found: ignore
+
+      - name: Upload Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: src/web/playwright-report/
+          if-no-files-found: ignore

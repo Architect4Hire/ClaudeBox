@@ -129,10 +129,10 @@ public class RecipeRepository(AppDbContext db) : IRecipeRepository
         }
         catch (DbUpdateException ex)
             when (ex.InnerException is PostgresException
-                  {
-                      SqlState: PostgresErrorCodes.UniqueViolation,
-                      ConstraintName: RecipeNameUniqueIndex
-                  })
+            {
+                SqlState: PostgresErrorCodes.UniqueViolation,
+                ConstraintName: RecipeNameUniqueIndex
+            })
         {
             // The unique index is the real backstop: a concurrent create can slip past the
             // business-layer pre-check, so translate the DB violation to the domain exception here
@@ -207,10 +207,10 @@ public class RecipeRepository(AppDbContext db) : IRecipeRepository
         }
         catch (DbUpdateException ex)
             when (ex.InnerException is PostgresException
-                  {
-                      SqlState: PostgresErrorCodes.UniqueViolation,
-                      ConstraintName: RecipeNameUniqueIndex
-                  })
+            {
+                SqlState: PostgresErrorCodes.UniqueViolation,
+                ConstraintName: RecipeNameUniqueIndex
+            })
         {
             // Same backstop as AddAsync: a concurrent rename can slip past the business-layer check, so
             // translate the unique-index violation to the domain exception (still surfaces as 409).

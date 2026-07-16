@@ -52,9 +52,18 @@
                   <p class="card__description">{{ recipe.description }}</p>
                 }
                 <dl class="card__meta">
-                  <div><dt>Serves</dt><dd>{{ recipe.servings }}</dd></div>
-                  <div><dt>Ingredients</dt><dd>{{ recipe.ingredientCount }}</dd></div>
-                  <div><dt>Steps</dt><dd>{{ recipe.stepCount }}</dd></div>
+                  <div>
+                    <dt>Serves</dt>
+                    <dd>{{ recipe.servings }}</dd>
+                  </div>
+                  <div>
+                    <dt>Ingredients</dt>
+                    <dd>{{ recipe.ingredientCount }}</dd>
+                  </div>
+                  <div>
+                    <dt>Steps</dt>
+                    <dd>{{ recipe.stepCount }}</dd>
+                  </div>
                 </dl>
                 @if (recipe.categories.length) {
                   <ul class="card__tags">

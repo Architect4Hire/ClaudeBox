@@ -7,12 +7,7 @@
         <!-- Decorative, like the list card's: the <h1> below already names the dish, so an alt would
              have a screen reader announce it twice. -->
         @if (state.recipe.hasImage) {
-          <img
-            class="recipe__banner"
-            [src]="imageUrl(state.recipe.id)"
-            alt=""
-            aria-hidden="true"
-          />
+          <img class="recipe__banner" [src]="imageUrl(state.recipe.id)" alt="" aria-hidden="true" />
         }
 
         <header class="recipe__header">
@@ -46,7 +41,10 @@
             <ul class="ingredients">
               @for (ingredient of state.recipe.ingredients; track $index) {
                 <li>
-                  <span class="ingredients__qty">{{ ingredient.quantity }}{{ ingredient.unit ? ' ' + ingredient.unit : '' }}</span>
+                  <span class="ingredients__qty"
+                    >{{ ingredient.quantity
+                    }}{{ ingredient.unit ? ' ' + ingredient.unit : '' }}</span
+                  >
                   <span class="ingredients__name">{{ ingredient.name }}</span>
                 </li>
               }

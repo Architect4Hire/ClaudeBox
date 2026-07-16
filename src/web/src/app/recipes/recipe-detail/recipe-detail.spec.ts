@@ -27,7 +27,10 @@ async function setup(getById: ReturnType<typeof vi.fn>): Promise<ComponentFixtur
     imports: [RecipeDetail],
     providers: [
       provideRouter([]),
-      { provide: RecipeService, useValue: { getById, imageUrl: (id: number) => `/api/recipes/${id}/image` } },
+      {
+        provide: RecipeService,
+        useValue: { getById, imageUrl: (id: number) => `/api/recipes/${id}/image` },
+      },
       { provide: ActivatedRoute, useValue: { paramMap: of(convertToParamMap({ id: '7' })) } },
     ],
   }).compileComponents();
@@ -79,7 +82,9 @@ describe('RecipeDetail', () => {
       .mockReturnValueOnce(of(RECIPE));
     const fixture = await setup(getById);
 
-    (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>('.empty__retry')!.click();
+    (fixture.nativeElement as HTMLElement)
+      .querySelector<HTMLButtonElement>('.empty__retry')!
+      .click();
     await fixture.whenStable();
 
     expect(getById).toHaveBeenCalledTimes(2);

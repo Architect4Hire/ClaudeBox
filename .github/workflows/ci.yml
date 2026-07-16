@@ -1,0 +1,94 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+# A new push to a PR makes the in-flight run pointless — cancel it rather than pay for it.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    name: backend (build + test)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # global-json-file, not a literal version: the SDK pin lives in one place and CI follows it.
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Restore
+        run: dotnet restore
+
+      # -warnaserror here rather than TreatWarningsAsErrors in Directory.Build.props: a warning
+      # should stop the build in CI, not while someone is mid-edit locally. This also makes NU1903
+      # (a new advisory against a dependency) fail the build — see the security pins in
+      # Directory.Packages.props.
+      - name: Build
+        run: dotnet build --no-restore -warnaserror
+
+      # Testcontainers' Postgres tests need a Docker daemon; ubuntu-latest ships one running.
+      - name: Test
+        run: dotnet test --no-build --verbosity normal
+
+  frontend:
+    name: frontend (build + test)
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: src/web
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: src/web/package-lock.json
+
+      - name: Install
+        run: npm ci
+
+      # Vitest on jsdom — already headless, no browser or display server needed.
+      - name: Test
+        run: npm test -- --watch=false
+
+      - name: Build
+        run: npm run build
+
+  format:
+    name: format
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: src/web/package-lock.json
+
+      # prettier is a devDependency of the Angular app, so the app's install is what provides it.
+      - name: Install
+        run: npm ci
+        working-directory: src/web
+
+      # These two steps must stay the mirror image of .claude/hooks/format.sh, which runs
+      # `dotnet format --include <file>` and `<app>/node_modules/.bin/prettier --write <file>` on
+      # each edited file. If they drift, the hook formats one way and CI fails the other — so the
+      # binary, its version, and the file set all have to match. Same pinned prettier, same globs.
+      - name: Verify C# formatting
+        run: dotnet format --verify-no-changes
+
+      - name: Verify prettier formatting
+        run: git ls-files '*.json' '*.ts' '*.css' '*.html' '*.scss' | xargs src/web/node_modules/.bin/prettier --check
