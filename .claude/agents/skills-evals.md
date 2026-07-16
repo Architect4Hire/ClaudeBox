@@ -70,12 +70,15 @@ against its own skill.
      operations and owns the transaction boundary for them. No rules, mapping, cache, validation, or
      `DbContext` of its own. Two shapes here are *correct*, do not report either: a method that is a
      one-line pass-through to the repository (the seam is the point, not a needless wrapper), and
-     driving a transaction via `IDataTransaction` (that abstraction is EF-free by design — only an
-     EF type such as `IDbContextTransaction` on this layer is a finding). A multi-write composition
-     that is *not* transactional is a finding.
+     wrapping a composition in `_repository.ExecuteInTransactionAsync(async token => …)` (the callback
+     is EF-free by design — only an EF type such as `IDbContextTransaction` on this layer is a
+     finding). A multi-write composition that is *not* transactional is a finding.
    - Repository: EF only; no rules, cache, or validation. Two things here are *correct*: a list read
-     projecting to a summary ServiceModel, and `BeginTransactionAsync` returning an
-     `IDataTransaction` — both are sanctioned exceptions, do not report them.
+     projecting to a summary ServiceModel, and `ExecuteInTransactionAsync` taking the data layer's
+     operation as a callback — both are sanctioned exceptions, do not report them. (It is a callback
+     rather than a `BeginTransactionAsync` handing back a transaction because Aspire's Npgsql retry
+     execution strategy refuses to run inside a caller-opened transaction. Do not report the callback
+     shape as an oddity, and do not suggest "simplifying" it to begin/commit — that breaks at runtime.)
    - Each layer depends on the **interface** below it, never a concrete class.
 5. Check the tests the skill demands actually exist and assert the right thing — the facade's
    cache-hit / cache-miss / validation-failure trio is the one most often skipped.

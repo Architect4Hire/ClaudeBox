@@ -74,14 +74,14 @@ Controller  →  Facade              →  Business                →  DataLayer
   however many repository calls it takes, so business asks once and does no sequencing (e.g.
   `DeleteRecipeAsync` = delete the recipe, then reap the categories and tags it orphaned). Owns the
   **transaction boundary** for anything it composes: it knows which calls form one operation, so it
-  is the only layer that can say where atomicity starts and ends — wrap multi-write compositions in
-  `BeginTransactionAsync` and commit at the end. Passes an operation straight through when a single
+  is the only layer that can say where atomicity starts and ends — pass multi-write compositions to
+  `ExecuteInTransactionAsync`. Passes an operation straight through when a single
   repository call already *is* the whole operation. Depends on `I<Feature>Repository` — it holds no
   `DbContext`, so every query still belongs to the repository. No rules, mapping, cache, or
   validation.
 - **Repository** (`Data/`) — **data only**: EF Core queries against the Aspire-provided `DbContext`,
-  plus `BeginTransactionAsync` (the one thing it exposes that isn't a query — it returns the
-  EF-free `IDataTransaction` the data layer commits, so EF stops here).
+  plus `ExecuteInTransactionAsync` (the one thing it exposes that isn't a query — it takes the data
+  layer's whole operation as a callback and runs it in a transaction, so EF stops here).
   Detail reads and writes return the **Domain entity**; a **list** read projects straight to its
   summary **ServiceModel** in SQL (counts without materializing child rows — the one place data
   touches an outbound model, to keep the projection). Each method is one self-contained data
@@ -123,12 +123,28 @@ anyone asks). Ask what a reviewer would call the extra call: a rule, or bookkeep
    composing however many repository calls the operation takes into one. When a single repository
    call already is the whole operation, the method is a one-line pass-through — that is expected, and
    it is still the method business depends on, so the seam holds when the operation later grows a
-   second call. **If the composition writes more than once, make it atomic:**
+   second call. **If the composition writes more than once, make it atomic** — hand the whole
+   operation to the repository as a callback:
    ```csharp
-   await using var transaction = await _repository.BeginTransactionAsync(ct);
-   // ... the repository calls that make up the operation ...
-   await transaction.CommitAsync(ct);   // no commit → dispose rolls back
+   var result = await _repository.ExecuteInTransactionAsync(
+       async token =>
+       {
+           // ... the repository calls that make up the operation ...
+           return whatever;   // a throw on any leg rolls the whole thing back
+       },
+       ct);
    ```
+   **A callback, not a `BeginTransactionAsync` that hands back a transaction — and that shape is
+   forced, not chosen.** Aspire's Npgsql integration enables retry-on-failure, and its execution
+   strategy refuses to run inside a transaction the caller opened itself ("does not support
+   user-initiated transactions"): it can't replay a unit whose boundaries it doesn't own. Passing the
+   whole unit in is what lets the two coexist.
+
+   Two consequences worth internalising: the operation **may run more than once**, so it must be safe
+   to repeat; and only work done *through this repository* is rolled back, so anything touching
+   another store (blobs, a queue) belongs outside the callback. See
+   `RecipeDataLayer.DeleteRecipeAsync` for both.
+
    Depends only on `IRecipeRepository`; no `DbContext` of its own.
 
 7. **Business (`IRecipeBusiness` / `RecipeBusiness`)** → `Business/`. Add the method the facade
