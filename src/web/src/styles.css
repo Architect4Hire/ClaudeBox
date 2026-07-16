@@ -109,7 +109,7 @@ a {
  * through position or placeholder instead of visible text. Not `display: none` — that would take the
  * element out of the accessibility tree, which is the opposite of the point.
  */
-.rb-visually-hidden {
+.app-visually-hidden {
   position: absolute;
   width: 1px;
   height: 1px;
@@ -165,7 +165,7 @@ a {
 }
 
 /* Skip link — hidden until focused, then pinned over the sticky header. */
-.rb-skip-link {
+.app-skip-link {
   position: absolute;
   left: 0.5rem;
   top: -100%;
@@ -180,7 +180,7 @@ a {
   transition: top var(--app-fast) var(--app-ease);
 }
 
-.rb-skip-link:focus-visible {
+.app-skip-link:focus-visible {
   top: 0.5rem;
 }
 

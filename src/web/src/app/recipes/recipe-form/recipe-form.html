@@ -100,7 +100,7 @@
       <legend>Ingredients</legend>
       @for (ingredient of ingredients.controls; track ingredient; let i = $index) {
         <div class="row" [formGroupName]="i">
-          <label class="rb-visually-hidden" [for]="'ingredient-name-' + i">
+          <label class="app-visually-hidden" [for]="'ingredient-name-' + i">
             Ingredient {{ i + 1 }} name
           </label>
           <input
@@ -111,7 +111,7 @@
             formControlName="name"
           />
 
-          <label class="rb-visually-hidden" [for]="'ingredient-qty-' + i">
+          <label class="app-visually-hidden" [for]="'ingredient-qty-' + i">
             Ingredient {{ i + 1 }} quantity
           </label>
           <input
@@ -123,7 +123,7 @@
             min="0"
           />
 
-          <label class="rb-visually-hidden" [for]="'ingredient-unit-' + i">
+          <label class="app-visually-hidden" [for]="'ingredient-unit-' + i">
             Ingredient {{ i + 1 }} unit
           </label>
           <input
@@ -153,7 +153,9 @@
       @for (step of steps.controls; track step; let i = $index) {
         <div class="row" [formGroupName]="i">
           <span class="row__order" aria-hidden="true">{{ i + 1 }}.</span>
-          <label class="rb-visually-hidden" [for]="'step-' + i">Step {{ i + 1 }} instruction</label>
+          <label class="app-visually-hidden" [for]="'step-' + i"
+            >Step {{ i + 1 }} instruction</label
+          >
           <input
             class="row__grow"
             [id]="'step-' + i"
@@ -180,7 +182,7 @@
       <p class="group__hint">Optional. Group this recipe under one or more categories.</p>
       @for (category of categories.controls; track category; let i = $index) {
         <div class="row">
-          <label class="rb-visually-hidden" [for]="'category-' + i">Category {{ i + 1 }}</label>
+          <label class="app-visually-hidden" [for]="'category-' + i">Category {{ i + 1 }}</label>
           <input
             class="row__grow"
             [id]="'category-' + i"
@@ -206,7 +208,7 @@
       <p class="group__hint">Optional. Add freeform labels like “quick” or “vegetarian”.</p>
       @for (tag of tags.controls; track tag; let i = $index) {
         <div class="row">
-          <label class="rb-visually-hidden" [for]="'tag-' + i">Tag {{ i + 1 }}</label>
+          <label class="app-visually-hidden" [for]="'tag-' + i">Tag {{ i + 1 }}</label>
           <input
             class="row__grow"
             [id]="'tag-' + i"

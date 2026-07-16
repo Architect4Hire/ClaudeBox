@@ -56,10 +56,10 @@
   max-width: 1040px;
   margin: 0 auto;
   padding: 2rem 1.5rem 4rem;
-  animation: rb-fade-in var(--app-med) var(--app-ease) both;
+  animation: app-fade-in var(--app-med) var(--app-ease) both;
 }
 
-@keyframes rb-fade-in {
+@keyframes app-fade-in {
   from {
     opacity: 0;
     transform: translateY(6px);
