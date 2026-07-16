@@ -4,7 +4,7 @@ using RecipeBox.ApiService.Managers.Models.ViewModels;
 namespace RecipeBox.ApiService.Business;
 
 /// <summary>
-/// Orchestrates the Recipes feature: sequences repository calls, applies data-dependent domain
+/// Orchestrates the Recipes feature: sequences data-layer calls, applies data-dependent domain
 /// rules, translates validated view models into domain entities, and maps loaded domain entities up
 /// into service models. No request validation, caching, or direct EF access.
 /// </summary>
@@ -35,7 +35,7 @@ public interface IRecipeBusiness
     Task<RecipeDetailServiceModel?> UpdateAsync(int id, UpdateRecipeViewModel viewModel, CancellationToken ct);
 
     /// <summary>
-    /// Deletes the recipe with the given id and reaps any category or tag its removal left without
+    /// Deletes the recipe with the given id, along with any category or tag its removal left without
     /// recipes. Returns <c>false</c> when no recipe has that id (the controller turns that into a 404).
     /// </summary>
     Task<bool> DeleteAsync(int id, CancellationToken ct);

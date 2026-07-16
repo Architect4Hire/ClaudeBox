@@ -7,14 +7,14 @@ using RecipeBox.ApiService.Managers.Models.ViewModels;
 namespace RecipeBox.ApiService.Business;
 
 /// <summary>
-/// Orchestration for the Recipes feature. Depends only on <see cref="IRecipeRepository"/>; detail
-/// reads map the loaded domain entity to a service model, the list read passes the repository's
+/// Orchestration for the Recipes feature. Depends only on <see cref="IRecipeDataLayer"/>; detail
+/// reads map the loaded domain entity to a service model, the list read passes the data layer's
 /// projected summaries straight through, and create translates the view model to a domain entity,
 /// applies the unique-name rule, and maps the persisted result back up to a service model.
 /// </summary>
-public class RecipeBusiness(IRecipeRepository repository) : IRecipeBusiness
+public class RecipeBusiness(IRecipeDataLayer data) : IRecipeBusiness
 {
-    private readonly IRecipeRepository _repository = repository;
+    private readonly IRecipeDataLayer _data = data;
 
     // Translate the validated view model into normalized domain criteria — the same VM→domain step the
     // write paths do with ToEntity(), and what keeps view models from reaching the data layer. The
@@ -22,11 +22,11 @@ public class RecipeBusiness(IRecipeRepository repository) : IRecipeBusiness
     // (counts without materializing rows), so they pass straight through.
     public Task<IReadOnlyList<RecipeSummaryServiceModel>> ListAsync(
         RecipeFilterViewModel filter, CancellationToken ct) =>
-        _repository.ListAsync(filter.ToFilter(), ct);
+        _data.ListAsync(filter.ToFilter(), ct);
 
     public async Task<RecipeDetailServiceModel?> GetByIdAsync(int id, CancellationToken ct)
     {
-        var recipe = await _repository.GetByIdAsync(id, ct);
+        var recipe = await _data.GetByIdAsync(id, ct);
         return recipe?.ToServiceModel();
     }
 
@@ -38,12 +38,12 @@ public class RecipeBusiness(IRecipeRepository repository) : IRecipeBusiness
         // Data-dependent rule: name uniqueness needs the DB, so it lives here, not in the validator.
         // The DB's unique index is the real backstop (a concurrent create can slip past this check);
         // the repository translates that violation to the same RecipeNameConflictException.
-        if (await _repository.ExistsByNameAsync(recipe.Name, ct))
+        if (await _data.ExistsByNameAsync(recipe.Name, ct))
         {
             throw new RecipeNameConflictException(recipe.Name);
         }
 
-        var created = await _repository.AddAsync(recipe, ct);
+        var created = await _data.AddAsync(recipe, ct);
         return created.ToServiceModel();
     }
 
@@ -55,28 +55,17 @@ public class RecipeBusiness(IRecipeRepository repository) : IRecipeBusiness
         // Data-dependent rule: the name must be unique among *other* recipes (a recipe may keep its own
         // name). As with create, the DB's unique index is the real backstop against a concurrent rename;
         // the repository translates that violation to the same RecipeNameConflictException.
-        if (await _repository.ExistsWithNameExceptAsync(incoming.Name, id, ct))
+        if (await _data.ExistsWithNameExceptAsync(incoming.Name, id, ct))
         {
             throw new RecipeNameConflictException(incoming.Name);
         }
 
-        var updated = await _repository.UpdateAsync(id, incoming, ct);
+        var updated = await _data.UpdateAsync(id, incoming, ct);
         return updated?.ToServiceModel();
     }
 
-    public async Task<bool> DeleteAsync(int id, CancellationToken ct)
-    {
-        if (!await _repository.DeleteAsync(id, ct))
-        {
-            return false;
-        }
-
-        // Domain rule: neither taxonomy outlives the last recipe that named it. The sequencing lives
-        // here rather than in the repository, which stays a pure data operation. These writes are not
-        // one transaction — a reap that fails just leaves rows the next delete sweeps up, since both
-        // sweeps are idempotent and global.
-        await _repository.DeleteOrphanedCategoriesAsync(ct);
-        await _repository.DeleteOrphanedTagsAsync(ct);
-        return true;
-    }
+    // Deleting a recipe also reaps the categories and tags it orphaned. That sequencing is a data
+    // concern, so it lives in the data layer and arrives here as one operation.
+    public Task<bool> DeleteAsync(int id, CancellationToken ct) =>
+        _data.DeleteRecipeAsync(id, ct);
 }

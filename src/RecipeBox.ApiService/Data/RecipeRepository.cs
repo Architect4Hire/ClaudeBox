@@ -20,6 +20,12 @@ public class RecipeRepository(RecipeDbContext db) : IRecipeRepository
     /// </summary>
     public const string RecipeNameUniqueIndex = "IX_Recipes_Name_Lower";
 
+    // Wrapped in EfDataTransaction so callers get a commit/rollback handle without an EF type on the
+    // surface. Both SaveChangesAsync and ExecuteDeleteAsync enlist in the context's current
+    // transaction automatically, so nothing else here has to know one is open.
+    public async Task<IDataTransaction> BeginTransactionAsync(CancellationToken ct) =>
+        new EfDataTransaction(await _db.Database.BeginTransactionAsync(ct));
+
     public async Task<IReadOnlyList<RecipeSummaryServiceModel>> ListAsync(
         RecipeFilter filter, CancellationToken ct)
     {

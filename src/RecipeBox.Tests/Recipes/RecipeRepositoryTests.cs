@@ -2,6 +2,7 @@ using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using RecipeBox.ApiService.Data;
 using RecipeBox.ApiService.Managers.Models.Domain;
+using RecipeBox.ApiService.Managers.Models.ServiceModels;
 using Xunit;
 
 namespace RecipeBox.Tests.Recipes;
@@ -72,6 +73,107 @@ public class RecipeRepositoryTests : IDisposable
         await using var context = NewContext();
         context.Recipes.AddRange(recipes);
         await context.SaveChangesAsync();
+    }
+
+    // ── Transactions ─────────────────────────────────────────────────────────────────────────────
+    // The data layer composes multi-write operations behind IDataTransaction (see RecipeDataLayer.
+    // DeleteRecipeAsync). Those tests mock the repository, so they can only prove commit/rollback was
+    // *asked for* — these prove the abstraction is wired to a real one.
+
+    [Fact]
+    public async Task BeginTransactionAsync_rolls_back_writes_when_disposed_without_a_commit()
+    {
+        await SeedAsync(Recipe("Soup", "Mains", 2, 3));
+        await using var context = NewContext();
+        var sut = new RecipeRepository(context);
+        var id = await IdOfAsync("Soup");
+
+        await using (await sut.BeginTransactionAsync(CancellationToken.None))
+        {
+            Assert.True(await sut.DeleteAsync(id, CancellationToken.None));
+            // Fall out of scope without committing — disposal must undo the delete.
+        }
+
+        await using var verify = NewContext();
+        Assert.True(await verify.Recipes.AnyAsync(r => r.Id == id));
+    }
+
+    [Fact]
+    public async Task BeginTransactionAsync_keeps_writes_once_committed()
+    {
+        await SeedAsync(Recipe("Soup", "Mains", 2, 3));
+        await using var context = NewContext();
+        var sut = new RecipeRepository(context);
+        var id = await IdOfAsync("Soup");
+
+        await using (var transaction = await sut.BeginTransactionAsync(CancellationToken.None))
+        {
+            Assert.True(await sut.DeleteAsync(id, CancellationToken.None));
+            await transaction.CommitAsync(CancellationToken.None);
+        }
+
+        await using var verify = NewContext();
+        Assert.False(await verify.Recipes.AnyAsync(r => r.Id == id));
+    }
+
+    [Fact]
+    public async Task DataLayer_delete_leaves_the_recipe_when_a_later_sweep_fails()
+    {
+        // The whole point of the transaction, driven end-to-end: a sweep that blows up must take the
+        // recipe delete back with it rather than leaving the store half-swept.
+        await SeedAsync(Recipe("Soup", "Mains", 2, 3));
+        await using var context = NewContext();
+        var id = await IdOfAsync("Soup");
+        var sut = new RecipeDataLayer(new ThrowingSweepRepository(context));
+
+        await Assert.ThrowsAsync<InvalidOperationException>(
+            () => sut.DeleteRecipeAsync(id, CancellationToken.None));
+
+        await using var verify = NewContext();
+        Assert.True(await verify.Recipes.AnyAsync(r => r.Id == id));
+    }
+
+    /// <summary>
+    /// A real repository (real transaction, real deletes) whose category sweep fails, to force a
+    /// rollback mid-composition. Delegates rather than subclasses, so no production method has to be
+    /// made <c>virtual</c> just to be tested.
+    /// </summary>
+    private sealed class ThrowingSweepRepository(RecipeDbContext db) : IRecipeRepository
+    {
+        private readonly RecipeRepository _inner = new(db);
+
+        public Task<int> DeleteOrphanedCategoriesAsync(CancellationToken ct) =>
+            throw new InvalidOperationException("sweep failed");
+
+        public Task<IDataTransaction> BeginTransactionAsync(CancellationToken ct) =>
+            _inner.BeginTransactionAsync(ct);
+
+        public Task<bool> DeleteAsync(int id, CancellationToken ct) => _inner.DeleteAsync(id, ct);
+
+        public Task<int> DeleteOrphanedTagsAsync(CancellationToken ct) =>
+            _inner.DeleteOrphanedTagsAsync(ct);
+
+        public Task<IReadOnlyList<RecipeSummaryServiceModel>> ListAsync(RecipeFilter filter, CancellationToken ct) =>
+            _inner.ListAsync(filter, ct);
+
+        public Task<Recipe?> GetByIdAsync(int id, CancellationToken ct) => _inner.GetByIdAsync(id, ct);
+
+        public Task<bool> ExistsByNameAsync(string name, CancellationToken ct) =>
+            _inner.ExistsByNameAsync(name, ct);
+
+        public Task<bool> ExistsWithNameExceptAsync(string name, int excludingId, CancellationToken ct) =>
+            _inner.ExistsWithNameExceptAsync(name, excludingId, ct);
+
+        public Task<Recipe> AddAsync(Recipe recipe, CancellationToken ct) => _inner.AddAsync(recipe, ct);
+
+        public Task<Recipe?> UpdateAsync(int id, Recipe incoming, CancellationToken ct) =>
+            _inner.UpdateAsync(id, incoming, ct);
+    }
+
+    private async Task<int> IdOfAsync(string name)
+    {
+        await using var context = NewContext();
+        return await context.Recipes.Where(r => r.Name == name).Select(r => r.Id).SingleAsync();
     }
 
     [Fact]

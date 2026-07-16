@@ -17,8 +17,8 @@ edit files.
 
 The skills in `.claude/skills/` are the specification:
 
-- `add-endpoint/SKILL.md` — the controller → facade → business → data layering, the three model
-  types, DI wiring, per-layer tests.
+- `add-endpoint/SKILL.md` — the controller → facade → business → data layer → repository layering,
+  the three model types, DI wiring, per-layer tests.
 - `new-component/SKILL.md` — standalone Angular components, typed services, `async` pipe.
 - `add-aspire-resource/SKILL.md` — AppHost declaration, `WithReference` + `WaitFor`, name-keyed
   client integrations.
@@ -62,9 +62,20 @@ against its own skill.
 4. Verify the layer boundaries by their `using`s and constructor dependencies, not by filename:
    - Controller: no validation, cache, logic, or data access; never names an entity type.
    - Facade: validation + caching only; must not `using` EF Core or map anything.
-   - Business: depends on `I<Feature>Repository` only; no validator, no cache, no `DbContext`.
-   - Data: EF only; no rules, cache, or validation. A list read projecting to a summary ServiceModel
-     is *correct* — it is the one sanctioned exception, do not report it.
+   - Business: depends on `I<Feature>DataLayer` only; no validator, no cache, no `DbContext`, and no
+     sequencing of data calls that isn't driven by a domain rule. A read-then-write pair *is*
+     business's when a rule decides the write (the unique-name check before an add) — do not report
+     that.
+   - DataLayer: depends on `I<Feature>Repository` only; composes repository calls into whole data
+     operations and owns the transaction boundary for them. No rules, mapping, cache, validation, or
+     `DbContext` of its own. Two shapes here are *correct*, do not report either: a method that is a
+     one-line pass-through to the repository (the seam is the point, not a needless wrapper), and
+     driving a transaction via `IDataTransaction` (that abstraction is EF-free by design — only an
+     EF type such as `IDbContextTransaction` on this layer is a finding). A multi-write composition
+     that is *not* transactional is a finding.
+   - Repository: EF only; no rules, cache, or validation. Two things here are *correct*: a list read
+     projecting to a summary ServiceModel, and `BeginTransactionAsync` returning an
+     `IDataTransaction` — both are sanctioned exceptions, do not report them.
    - Each layer depends on the **interface** below it, never a concrete class.
 5. Check the tests the skill demands actually exist and assert the right thing — the facade's
    cache-hit / cache-miss / validation-failure trio is the one most often skipped.

@@ -19,8 +19,10 @@ builder.AddNpgsqlDbContext<RecipeDbContext>("recipesdb");
 // Registers IDistributedCache; the connection is injected, not configured by hand.
 builder.AddRedisDistributedCache("cache");
 
-// Recipes feature: layered Controller → Facade → Business → Data (each on the interface below it).
+// Recipes feature: layered Controller → Facade → Business → DataLayer → Repository (each on the
+// interface below it).
 builder.Services.AddScoped<IRecipeRepository, RecipeRepository>();
+builder.Services.AddScoped<IRecipeDataLayer, RecipeDataLayer>();
 builder.Services.AddScoped<IRecipeBusiness, RecipeBusiness>();
 builder.Services.AddScoped<IRecipeFacade, RecipeFacade>();
 builder.Services.AddValidatorsFromAssemblyContaining<CreateRecipeViewModelValidator>();

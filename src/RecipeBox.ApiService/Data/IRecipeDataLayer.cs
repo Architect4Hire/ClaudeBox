@@ -4,20 +4,15 @@ using RecipeBox.ApiService.Managers.Models.ServiceModels;
 namespace RecipeBox.ApiService.Data;
 
 /// <summary>
-/// Persistence for the Recipes feature. Data access only — no validation, caching, or domain rules.
-/// Detail reads and writes return the domain <see cref="Recipe"/> entity for the business layer to
-/// map; the list read is projected straight to <see cref="RecipeSummaryServiceModel"/> in SQL so a
-/// list view never materializes ingredient/step rows.
+/// The business layer's view of persistence for the Recipes feature: it composes
+/// <see cref="IRecipeRepository"/> calls into whole data operations, so a single logical read or
+/// write is a single call from business no matter how many repository operations it takes. Most
+/// methods pass an operation straight through; the ones that don't (see
+/// <see cref="DeleteRecipeAsync"/>) are why this seam exists. No domain rules, mapping, caching, or
+/// validation — those stay in business and the facade.
 /// </summary>
-public interface IRecipeRepository
+public interface IRecipeDataLayer
 {
-    /// <summary>
-    /// Opens a transaction over this repository's connection, for a caller composing several
-    /// operations that must land together or not at all. Every subsequent call on this repository
-    /// enlists in it until the returned transaction is committed or disposed.
-    /// </summary>
-    Task<IDataTransaction> BeginTransactionAsync(CancellationToken ct);
-
     /// <summary>
     /// Summary rows matching <paramref name="filter"/> — its criteria combine with AND, and a
     /// <see cref="RecipeFilter.None"/> filter returns every recipe. Expects an already-normalized
@@ -51,20 +46,9 @@ public interface IRecipeRepository
     Task<Recipe?> UpdateAsync(int id, Recipe incoming, CancellationToken ct);
 
     /// <summary>
-    /// Deletes the recipe with the given id along with its owned ingredients and steps. Returns
-    /// <c>false</c> when no recipe has that id.
+    /// Deletes the recipe with the given id along with its owned ingredients and steps, and reaps any
+    /// category or tag the removal left without recipes. Returns <c>false</c> when no recipe has that
+    /// id, in which case nothing is reaped.
     /// </summary>
-    Task<bool> DeleteAsync(int id, CancellationToken ct);
-
-    /// <summary>
-    /// Deletes every category no recipe references any more, and returns how many were removed.
-    /// Idempotent — a no-op when nothing is orphaned.
-    /// </summary>
-    Task<int> DeleteOrphanedCategoriesAsync(CancellationToken ct);
-
-    /// <summary>
-    /// Deletes every tag no recipe references any more, and returns how many were removed.
-    /// Idempotent — a no-op when nothing is orphaned.
-    /// </summary>
-    Task<int> DeleteOrphanedTagsAsync(CancellationToken ct);
+    Task<bool> DeleteRecipeAsync(int id, CancellationToken ct);
 }

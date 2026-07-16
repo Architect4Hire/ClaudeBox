@@ -9,16 +9,17 @@ using Xunit;
 namespace RecipeBox.Tests.Recipes;
 
 /// <summary>
-/// Business orchestration with a mocked repository: the list pass-through of projected summaries,
+/// Business orchestration with a mocked data layer: the list pass-through of projected summaries,
 /// domain-entity → service-model mapping on detail reads, and on create the view-model → domain
-/// translation plus the data-dependent unique-name rule.
+/// translation plus the data-dependent unique-name rule. The delete composition belongs to the data
+/// layer now — see <see cref="RecipeDataLayerTests"/>.
 /// </summary>
 public class RecipeBusinessTests
 {
-    private readonly IRecipeRepository _repository = Substitute.For<IRecipeRepository>();
+    private readonly IRecipeDataLayer _data = Substitute.For<IRecipeDataLayer>();
     private readonly RecipeBusiness _sut;
 
-    public RecipeBusinessTests() => _sut = new RecipeBusiness(_repository);
+    public RecipeBusinessTests() => _sut = new RecipeBusiness(_data);
 
     private static CreateRecipeViewModel ValidViewModel(string name) => new(
         Name: name,
@@ -41,34 +42,34 @@ public class RecipeBusinessTests
         {
             new(1, "Soup", "warm", 4, new[] { "Main" }, 3, 2),
         };
-        _repository.ListAsync(new RecipeFilter("Main", null), Arg.Any<CancellationToken>())
+        _data.ListAsync(new RecipeFilter("Main", null), Arg.Any<CancellationToken>())
             .Returns(summaries);
 
         var result = await _sut.ListAsync(
             new RecipeFilterViewModel { Category = "Main" }, CancellationToken.None);
 
         Assert.Same(summaries, result);
-        // The repository is reached with domain criteria, never the view model.
-        await _repository.Received(1)
+        // The data layer is reached with domain criteria, never the view model.
+        await _data.Received(1)
             .ListAsync(new RecipeFilter("Main", null), Arg.Any<CancellationToken>());
     }
 
     [Fact]
-    public async Task ListAsync_normalizes_the_filter_before_it_reaches_the_repository()
+    public async Task ListAsync_normalizes_the_filter_before_it_reaches_the_data_layer()
     {
         // Trimmed, and blank → null ("any"), so the data layer never has to defend against either.
         await _sut.ListAsync(
             new RecipeFilterViewModel { Category = "   ", Ingredient = "  flour  " },
             CancellationToken.None);
 
-        await _repository.Received(1)
+        await _data.Received(1)
             .ListAsync(new RecipeFilter(null, "flour"), Arg.Any<CancellationToken>());
     }
 
     [Fact]
-    public async Task GetByIdAsync_returns_null_when_repository_has_no_recipe()
+    public async Task GetByIdAsync_returns_null_when_data_layer_has_no_recipe()
     {
-        _repository.GetByIdAsync(7, Arg.Any<CancellationToken>()).Returns((Recipe?)null);
+        _data.GetByIdAsync(7, Arg.Any<CancellationToken>()).Returns((Recipe?)null);
 
         var result = await _sut.GetByIdAsync(7, CancellationToken.None);
 
@@ -78,7 +79,7 @@ public class RecipeBusinessTests
     [Fact]
     public async Task GetByIdAsync_maps_domain_entity_to_service_model()
     {
-        _repository.GetByIdAsync(7, Arg.Any<CancellationToken>()).Returns(new Recipe
+        _data.GetByIdAsync(7, Arg.Any<CancellationToken>()).Returns(new Recipe
         {
             Id = 7,
             Name = "Stew",
@@ -104,8 +105,8 @@ public class RecipeBusinessTests
     [Fact]
     public async Task CreateAsync_translates_view_model_persists_and_returns_service_model()
     {
-        _repository.ExistsByNameAsync("Fresh Bread", Arg.Any<CancellationToken>()).Returns(false);
-        _repository.AddAsync(Arg.Any<Recipe>(), Arg.Any<CancellationToken>()).Returns(ci =>
+        _data.ExistsByNameAsync("Fresh Bread", Arg.Any<CancellationToken>()).Returns(false);
+        _data.AddAsync(Arg.Any<Recipe>(), Arg.Any<CancellationToken>()).Returns(ci =>
         {
             var recipe = ci.Arg<Recipe>();
             recipe.Id = 42; // the real repo assigns the id on save
@@ -117,7 +118,7 @@ public class RecipeBusinessTests
         Assert.Equal(42, result.Id);
         Assert.Equal("Fresh Bread", result.Name);
         Assert.Equal(2, result.Steps.Count);
-        await _repository.Received(1).AddAsync(
+        await _data.Received(1).AddAsync(
             Arg.Is<Recipe>(r => r.Name == "Fresh Bread" && r.Ingredients.Count == 1),
             Arg.Any<CancellationToken>());
     }
@@ -125,19 +126,19 @@ public class RecipeBusinessTests
     [Fact]
     public async Task CreateAsync_throws_and_does_not_persist_on_duplicate_name()
     {
-        _repository.ExistsByNameAsync("Taken", Arg.Any<CancellationToken>()).Returns(true);
+        _data.ExistsByNameAsync("Taken", Arg.Any<CancellationToken>()).Returns(true);
 
         await Assert.ThrowsAsync<RecipeNameConflictException>(
             () => _sut.CreateAsync(ValidViewModel("Taken"), CancellationToken.None));
 
-        await _repository.DidNotReceive().AddAsync(Arg.Any<Recipe>(), Arg.Any<CancellationToken>());
+        await _data.DidNotReceive().AddAsync(Arg.Any<Recipe>(), Arg.Any<CancellationToken>());
     }
 
     [Fact]
     public async Task UpdateAsync_translates_view_model_persists_and_returns_service_model()
     {
-        _repository.ExistsWithNameExceptAsync("Rye Loaf", 7, Arg.Any<CancellationToken>()).Returns(false);
-        _repository.UpdateAsync(7, Arg.Any<Recipe>(), Arg.Any<CancellationToken>()).Returns(ci =>
+        _data.ExistsWithNameExceptAsync("Rye Loaf", 7, Arg.Any<CancellationToken>()).Returns(false);
+        _data.UpdateAsync(7, Arg.Any<Recipe>(), Arg.Any<CancellationToken>()).Returns(ci =>
         {
             var incoming = ci.ArgAt<Recipe>(1);
             incoming.Id = 7; // the real repo returns the persisted (tracked) entity, which carries the id
@@ -150,17 +151,17 @@ public class RecipeBusinessTests
         Assert.Equal(7, result!.Id);
         Assert.Equal("Rye Loaf", result.Name);
         Assert.Equal(3, result.Steps.Count);
-        await _repository.Received(1).UpdateAsync(
+        await _data.Received(1).UpdateAsync(
             7,
             Arg.Is<Recipe>(r => r.Name == "Rye Loaf" && r.Ingredients.Count == 1 && r.Steps.Count == 3),
             Arg.Any<CancellationToken>());
     }
 
     [Fact]
-    public async Task UpdateAsync_returns_null_when_repository_has_no_recipe()
+    public async Task UpdateAsync_returns_null_when_data_layer_has_no_recipe()
     {
-        _repository.ExistsWithNameExceptAsync(Arg.Any<string>(), 7, Arg.Any<CancellationToken>()).Returns(false);
-        _repository.UpdateAsync(7, Arg.Any<Recipe>(), Arg.Any<CancellationToken>()).Returns((Recipe?)null);
+        _data.ExistsWithNameExceptAsync(Arg.Any<string>(), 7, Arg.Any<CancellationToken>()).Returns(false);
+        _data.UpdateAsync(7, Arg.Any<Recipe>(), Arg.Any<CancellationToken>()).Returns((Recipe?)null);
 
         var result = await _sut.UpdateAsync(7, ValidUpdateViewModel("Ghost"), CancellationToken.None);
 
@@ -170,36 +171,27 @@ public class RecipeBusinessTests
     [Fact]
     public async Task UpdateAsync_throws_and_does_not_persist_when_name_taken_by_another()
     {
-        _repository.ExistsWithNameExceptAsync("Taken", 7, Arg.Any<CancellationToken>()).Returns(true);
+        _data.ExistsWithNameExceptAsync("Taken", 7, Arg.Any<CancellationToken>()).Returns(true);
 
         await Assert.ThrowsAsync<RecipeNameConflictException>(
             () => _sut.UpdateAsync(7, ValidUpdateViewModel("Taken"), CancellationToken.None));
 
-        await _repository.DidNotReceive().UpdateAsync(Arg.Any<int>(), Arg.Any<Recipe>(), Arg.Any<CancellationToken>());
+        await _data.DidNotReceive().UpdateAsync(Arg.Any<int>(), Arg.Any<Recipe>(), Arg.Any<CancellationToken>());
     }
 
-    [Fact]
-    public async Task DeleteAsync_reaps_both_orphaned_taxonomies_after_deleting_the_recipe()
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public async Task DeleteAsync_delegates_to_the_data_layer_and_returns_its_answer(bool deleted)
     {
-        _repository.DeleteAsync(7, Arg.Any<CancellationToken>()).Returns(true);
+        // Delete carries no domain rule of its own: the recipe and the taxonomy it orphaned come off
+        // together as one data operation, so business has nothing to sequence. The reaping itself is
+        // asserted in RecipeDataLayerTests.
+        _data.DeleteRecipeAsync(7, Arg.Any<CancellationToken>()).Returns(deleted);
 
         var result = await _sut.DeleteAsync(7, CancellationToken.None);
 
-        Assert.True(result);
-        await _repository.Received(1).DeleteOrphanedCategoriesAsync(Arg.Any<CancellationToken>());
-        await _repository.Received(1).DeleteOrphanedTagsAsync(Arg.Any<CancellationToken>());
-    }
-
-    [Fact]
-    public async Task DeleteAsync_returns_false_and_reaps_nothing_when_recipe_is_missing()
-    {
-        _repository.DeleteAsync(7, Arg.Any<CancellationToken>()).Returns(false);
-
-        var result = await _sut.DeleteAsync(7, CancellationToken.None);
-
-        Assert.False(result);
-        // Nothing was removed, so nothing can have been orphaned — neither sweep must run.
-        await _repository.DidNotReceive().DeleteOrphanedCategoriesAsync(Arg.Any<CancellationToken>());
-        await _repository.DidNotReceive().DeleteOrphanedTagsAsync(Arg.Any<CancellationToken>());
+        Assert.Equal(deleted, result);
+        await _data.Received(1).DeleteRecipeAsync(7, Arg.Any<CancellationToken>());
     }
 }
