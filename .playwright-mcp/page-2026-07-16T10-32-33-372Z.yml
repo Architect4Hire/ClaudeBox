@@ -1,0 +1,45 @@
+- generic [ref=e2]:
+  - banner [ref=e3]:
+    - link "RecipeBox" [ref=e4] [cursor=pointer]:
+      - /url: /
+      - generic [ref=e5]: 🍲
+  - main [ref=e7]:
+    - generic [ref=e101]:
+      - heading "New recipe" [level=1] [ref=e102]
+      - generic [ref=e103]:
+        - generic [ref=e104]: Name
+        - textbox "Name" [ref=e105]: Garlic Butter Shrimp
+      - generic [ref=e106]:
+        - generic [ref=e107]: Description
+        - textbox "Description" [ref=e108]: Fast skillet shrimp in a lemony garlic butter sauce.
+      - generic [ref=e109]:
+        - generic [ref=e110]: Servings
+        - spinbutton "Servings" [ref=e111]: "3"
+      - group "Ingredients" [ref=e112]:
+        - generic [ref=e114]:
+          - textbox "Name" [ref=e115]: Shrimp
+          - spinbutton "Qty" [ref=e116]: "500"
+          - textbox "Unit" [ref=e117]: g
+          - button "Remove" [ref=e118] [cursor=pointer]
+        - generic [ref=e138]:
+          - textbox "Name" [ref=e139]
+          - spinbutton "Qty" [ref=e140]: "1"
+          - textbox "Unit" [ref=e141]
+          - button "Remove" [ref=e142] [cursor=pointer]
+        - button "Add ingredient" [active] [ref=e119] [cursor=pointer]
+      - group "Steps" [ref=e120]:
+        - generic [ref=e122]:
+          - generic [ref=e123]: "1."
+          - textbox "Instruction" [ref=e124]: Pat the shrimp dry and season with salt.
+          - button "Remove" [disabled] [ref=e125]
+        - button "Add step" [ref=e126] [cursor=pointer]
+      - group "Categories" [ref=e127]:
+        - paragraph [ref=e129]: Optional. Group this recipe under one or more categories.
+        - button "Add category" [ref=e130] [cursor=pointer]
+      - group "Tags" [ref=e131]:
+        - paragraph [ref=e133]: Optional. Add freeform labels like “quick” or “vegetarian”.
+        - button "Add tag" [ref=e134] [cursor=pointer]
+      - generic [ref=e135]:
+        - button "Create recipe" [ref=e136] [cursor=pointer]
+        - link "Cancel" [ref=e137] [cursor=pointer]:
+          - /url: /

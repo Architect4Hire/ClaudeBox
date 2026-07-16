@@ -1,0 +1,60 @@
+- generic [ref=e2]:
+  - banner [ref=e3]:
+    - link "RecipeBox" [ref=e4] [cursor=pointer]:
+      - /url: /
+      - generic [ref=e5]: 🍲
+  - main [ref=e7]:
+    - generic [ref=e271]:
+      - generic [ref=e272]:
+        - generic [ref=e273]:
+          - heading "Recipes" [level=1] [ref=e274]
+          - paragraph [ref=e275]: Everything in your box, ready to cook.
+        - link "New recipe" [ref=e276] [cursor=pointer]:
+          - /url: /recipes/new
+          - generic [ref=e277]: +
+          - text: New recipe
+      - navigation "Filter recipes by category" [ref=e279]:
+        - button "All" [ref=e280] [cursor=pointer]
+        - button "Breakfast" [ref=e281] [cursor=pointer]
+        - button "Dessert" [ref=e282] [cursor=pointer]
+        - button "Main Course" [active] [pressed] [ref=e283] [cursor=pointer]
+        - button "Soup" [ref=e284] [cursor=pointer]
+      - list [ref=e285]:
+        - listitem [ref=e324]:
+          - link [ref=e325] [cursor=pointer]:
+            - /url: /recipes/5
+            - generic [ref=e326]: 🍽️
+            - generic [ref=e328]:
+              - heading "Garlic Butter Shrimp" [level=2] [ref=e329]
+              - paragraph [ref=e330]: Fast skillet shrimp in a lemony garlic butter sauce.
+              - generic [ref=e331]:
+                - generic [ref=e332]:
+                  - term [ref=e333]: Serves
+                  - definition [ref=e334]: "6"
+                - generic [ref=e335]:
+                  - term [ref=e336]: Ingredients
+                  - definition [ref=e337]: "2"
+                - generic [ref=e338]:
+                  - term [ref=e339]: Steps
+                  - definition [ref=e340]: "3"
+              - list [ref=e341]:
+                - listitem [ref=e342]: Main Course
+        - listitem [ref=e343]:
+          - link [ref=e344] [cursor=pointer]:
+            - /url: /recipes/1
+            - generic [ref=e345]: 🍽️
+            - generic [ref=e347]:
+              - heading "Spaghetti Aglio e Olio" [level=2] [ref=e348]
+              - paragraph [ref=e349]: "A fast Roman classic: garlic gently fried in good olive oil, tossed with spaghetti and chilli."
+              - generic [ref=e350]:
+                - generic [ref=e351]:
+                  - term [ref=e352]: Serves
+                  - definition [ref=e353]: "2"
+                - generic [ref=e354]:
+                  - term [ref=e355]: Ingredients
+                  - definition [ref=e356]: "5"
+                - generic [ref=e357]:
+                  - term [ref=e358]: Steps
+                  - definition [ref=e359]: "3"
+              - list [ref=e360]:
+                - listitem [ref=e361]: Main Course

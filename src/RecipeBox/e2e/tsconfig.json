@@ -1,0 +1,12 @@
+/* Type-checks the Playwright specs, which sit outside the app and unit-test tsconfigs. */
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "outDir": "../out-tsc/e2e",
+    "module": "preserve",
+    "moduleResolution": "bundler",
+    "strict": true,
+    "types": ["node"]
+  },
+  "include": ["**/*.ts", "../playwright.config.ts"]
+}

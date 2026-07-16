@@ -1,0 +1,32 @@
+- generic [ref=f1e2]:
+  - banner [ref=f1e3]:
+    - link "RecipeBox" [ref=f1e4] [cursor=pointer]:
+      - /url: /
+      - generic [ref=f1e5]: 🍲
+  - main [ref=f1e7]:
+    - article [ref=f1e50]:
+      - link "← All recipes" [ref=f1e51] [cursor=pointer]:
+        - /url: /
+      - generic [ref=f1e52]:
+        - generic [ref=f1e53]: 🍲
+        - generic [ref=f1e54]:
+          - heading "Chip Probe Recipe" [level=1] [ref=f1e55]
+          - generic [ref=f1e56]:
+            - generic [ref=f1e57]: 🍴 Serves 1
+            - list [ref=f1e58]:
+              - listitem [ref=f1e59]: Zzz-Probe-Cat
+        - link "Edit" [ref=f1e60] [cursor=pointer]:
+          - /url: /recipes/6/edit
+      - generic [ref=f1e61]:
+        - generic [ref=f1e62]:
+          - heading "Ingredients" [level=2] [ref=f1e63]
+          - list [ref=f1e64]:
+            - listitem [ref=f1e65]:
+              - generic [ref=f1e66]: "1"
+              - generic [ref=f1e67]: Probe
+        - generic [ref=f1e68]:
+          - heading "Steps" [level=2] [ref=f1e69]
+          - list [ref=f1e70]:
+            - listitem [ref=f1e71]:
+              - generic [ref=f1e72]: "1"
+              - generic [ref=f1e73]: Probe step.

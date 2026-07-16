@@ -60,4 +60,20 @@ public class RecipeBusiness(IRecipeRepository repository) : IRecipeBusiness
         var updated = await _repository.UpdateAsync(id, incoming, ct);
         return updated?.ToServiceModel();
     }
+
+    public async Task<bool> DeleteAsync(int id, CancellationToken ct)
+    {
+        if (!await _repository.DeleteAsync(id, ct))
+        {
+            return false;
+        }
+
+        // Domain rule: neither taxonomy outlives the last recipe that named it. The sequencing lives
+        // here rather than in the repository, which stays a pure data operation. These writes are not
+        // one transaction — a reap that fails just leaves rows the next delete sweeps up, since both
+        // sweeps are idempotent and global.
+        await _repository.DeleteOrphanedCategoriesAsync(ct);
+        await _repository.DeleteOrphanedTagsAsync(ct);
+        return true;
+    }
 }

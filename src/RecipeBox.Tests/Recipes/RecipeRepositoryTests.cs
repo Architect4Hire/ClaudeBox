@@ -40,6 +40,21 @@ public class RecipeRepositoryTests : IDisposable
             .ToList(),
     };
 
+    /// <summary>Re-points a recipe at a specific category instance, so several can share one row.</summary>
+    private static Recipe WithCategory(Recipe recipe, Category category)
+    {
+        recipe.Categories.Clear();
+        recipe.Categories.Add(category);
+        return recipe;
+    }
+
+    /// <summary>Attaches a tag instance, which several recipes can share (the helper adds none).</summary>
+    private static Recipe WithTag(Recipe recipe, Tag tag)
+    {
+        recipe.Tags.Add(tag);
+        return recipe;
+    }
+
     private async Task SeedAsync(params Recipe[] recipes)
     {
         await using var context = NewContext();
@@ -310,6 +325,129 @@ public class RecipeRepositoryTests : IDisposable
         var result = await sut.ListAsync("NoSuchCategory", CancellationToken.None);
 
         Assert.Empty(result);
+    }
+
+    [Fact]
+    public async Task DeleteAsync_cascades_to_ingredients_and_steps()
+    {
+        await SeedAsync(Recipe("Soup", "Mains", 2, 3));
+        var sut = new RecipeRepository(NewContext());
+
+        var deleted = await sut.DeleteAsync(1, CancellationToken.None);
+
+        Assert.True(deleted);
+        await using var verify = NewContext();
+        Assert.Empty(verify.Recipes);
+        // The owned children go with the recipe rather than lingering as unreachable rows.
+        Assert.Empty(verify.Ingredients);
+        Assert.Empty(verify.Steps);
+    }
+
+    [Fact]
+    public async Task DeleteAsync_returns_false_for_unknown_id()
+    {
+        await SeedAsync(Recipe("Soup", "Mains", 2, 3));
+        var sut = new RecipeRepository(NewContext());
+
+        Assert.False(await sut.DeleteAsync(404, CancellationToken.None));
+
+        await using var verify = NewContext();
+        Assert.Equal(1, await verify.Recipes.CountAsync());
+    }
+
+    [Fact]
+    public async Task DeleteOrphanedCategoriesAsync_removes_only_categories_with_no_recipes()
+    {
+        await SeedAsync(
+            Recipe("Soup", "Mains", 2, 3),
+            Recipe("Bread", "Baking", 5, 4));
+        await new RecipeRepository(NewContext()).DeleteAsync(1, CancellationToken.None);
+        var sut = new RecipeRepository(NewContext());
+
+        var reaped = await sut.DeleteOrphanedCategoriesAsync(CancellationToken.None);
+
+        Assert.Equal(1, reaped);
+        await using var verify = NewContext();
+        // "Mains" lost its only recipe; "Baking" still has Bread and must survive.
+        Assert.Equal("Baking", Assert.Single(verify.Categories).Name);
+    }
+
+    [Fact]
+    public async Task DeleteOrphanedCategoriesAsync_is_a_no_op_when_every_category_is_used()
+    {
+        await SeedAsync(Recipe("Soup", "Mains", 2, 3));
+        var sut = new RecipeRepository(NewContext());
+
+        Assert.Equal(0, await sut.DeleteOrphanedCategoriesAsync(CancellationToken.None));
+
+        await using var verify = NewContext();
+        Assert.Single(verify.Categories);
+    }
+
+    [Fact]
+    public async Task DeleteAsync_keeps_a_category_that_another_recipe_still_uses()
+    {
+        // Seeding writes entities straight through, bypassing the repository's resolve-by-name, so the
+        // two recipes must share one Category instance — a second "Mains" row would breach its unique index.
+        var mains = new Category { Name = "Mains" };
+        await SeedAsync(
+            WithCategory(Recipe("Soup", "Mains", 2, 3), mains),
+            WithCategory(Recipe("Stew", "Mains", 1, 1), mains));
+        await new RecipeRepository(NewContext()).DeleteAsync(1, CancellationToken.None);
+        var sut = new RecipeRepository(NewContext());
+
+        Assert.Equal(0, await sut.DeleteOrphanedCategoriesAsync(CancellationToken.None));
+
+        await using var verify = NewContext();
+        // Deleting one of two recipes sharing "Mains" must not strip the survivor's category.
+        Assert.Equal("Mains", Assert.Single(verify.Categories).Name);
+        Assert.Equal("Stew", Assert.Single(verify.Recipes).Name);
+    }
+
+    [Fact]
+    public async Task DeleteOrphanedTagsAsync_removes_only_tags_with_no_recipes()
+    {
+        await SeedAsync(
+            WithTag(Recipe("Soup", "Mains", 2, 3), new Tag { Name = "solo" }),
+            WithTag(Recipe("Bread", "Baking", 5, 4), new Tag { Name = "quick" }));
+        await new RecipeRepository(NewContext()).DeleteAsync(1, CancellationToken.None);
+        var sut = new RecipeRepository(NewContext());
+
+        var reaped = await sut.DeleteOrphanedTagsAsync(CancellationToken.None);
+
+        Assert.Equal(1, reaped);
+        await using var verify = NewContext();
+        // "solo" lost its only recipe; "quick" still has Bread and must survive.
+        Assert.Equal("quick", Assert.Single(verify.Tags).Name);
+    }
+
+    [Fact]
+    public async Task DeleteAsync_keeps_a_tag_that_another_recipe_still_uses()
+    {
+        // As with categories, seeding bypasses resolve-by-name, so the shared tag must be one instance.
+        var quick = new Tag { Name = "quick" };
+        await SeedAsync(
+            WithTag(Recipe("Soup", "Mains", 2, 3), quick),
+            WithTag(Recipe("Stew", "Stews", 1, 1), quick));
+        await new RecipeRepository(NewContext()).DeleteAsync(1, CancellationToken.None);
+        var sut = new RecipeRepository(NewContext());
+
+        Assert.Equal(0, await sut.DeleteOrphanedTagsAsync(CancellationToken.None));
+
+        await using var verify = NewContext();
+        Assert.Equal("quick", Assert.Single(verify.Tags).Name);
+    }
+
+    [Fact]
+    public async Task DeleteOrphanedTagsAsync_is_a_no_op_when_every_tag_is_used()
+    {
+        await SeedAsync(WithTag(Recipe("Soup", "Mains", 2, 3), new Tag { Name = "quick" }));
+        var sut = new RecipeRepository(NewContext());
+
+        Assert.Equal(0, await sut.DeleteOrphanedTagsAsync(CancellationToken.None));
+
+        await using var verify = NewContext();
+        Assert.Single(verify.Tags);
     }
 
     public void Dispose() => _connection.Dispose();

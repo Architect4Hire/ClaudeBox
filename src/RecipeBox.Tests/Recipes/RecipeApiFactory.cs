@@ -66,6 +66,17 @@ public class RecipeApiFactory : WebApplicationFactory<Program>
         await db.SaveChangesAsync();
     }
 
+    /// <summary>
+    /// Reads database state through a fresh scope, for asserting on rows the API does not expose —
+    /// tags have no endpoint, so a tag reaped by a delete is otherwise unobservable from a test.
+    /// </summary>
+    public async Task<T> QueryAsync<T>(Func<RecipeDbContext, Task<T>> query)
+    {
+        using var scope = Services.CreateScope();
+        var db = scope.ServiceProvider.GetRequiredService<RecipeDbContext>();
+        return await query(db);
+    }
+
     protected override void Dispose(bool disposing)
     {
         base.Dispose(disposing);

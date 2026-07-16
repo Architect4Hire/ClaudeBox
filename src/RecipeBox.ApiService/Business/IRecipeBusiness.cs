@@ -28,4 +28,10 @@ public interface IRecipeBusiness
     /// name. Returns <c>null</c> when no recipe has that id (the controller turns that into a 404).
     /// </summary>
     Task<RecipeDetailServiceModel?> UpdateAsync(int id, UpdateRecipeViewModel viewModel, CancellationToken ct);
+
+    /// <summary>
+    /// Deletes the recipe with the given id and reaps any category or tag its removal left without
+    /// recipes. Returns <c>false</c> when no recipe has that id (the controller turns that into a 404).
+    /// </summary>
+    Task<bool> DeleteAsync(int id, CancellationToken ct);
 }

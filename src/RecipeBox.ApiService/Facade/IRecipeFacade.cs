@@ -28,4 +28,11 @@ public interface IRecipeFacade
     /// Returns <c>null</c> when no recipe has that id (the controller turns that into a 404).
     /// </summary>
     Task<RecipeDetailServiceModel?> UpdateAsync(int id, UpdateRecipeViewModel viewModel, CancellationToken ct);
+
+    /// <summary>
+    /// Deletes the recipe with the given id and invalidates its cached copies. Nothing is validated —
+    /// the id arrives as a route value, not a view model. Returns <c>false</c> when no recipe has that
+    /// id (the controller turns that into a 404).
+    /// </summary>
+    Task<bool> DeleteAsync(int id, CancellationToken ct);
 }

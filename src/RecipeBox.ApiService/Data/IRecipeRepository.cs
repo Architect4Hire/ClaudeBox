@@ -38,4 +38,22 @@ public interface IRecipeRepository
     /// untouched. Returns <c>null</c> when no recipe has that id.
     /// </summary>
     Task<Recipe?> UpdateAsync(int id, Recipe incoming, CancellationToken ct);
+
+    /// <summary>
+    /// Deletes the recipe with the given id along with its owned ingredients and steps. Returns
+    /// <c>false</c> when no recipe has that id.
+    /// </summary>
+    Task<bool> DeleteAsync(int id, CancellationToken ct);
+
+    /// <summary>
+    /// Deletes every category no recipe references any more, and returns how many were removed.
+    /// Idempotent — a no-op when nothing is orphaned.
+    /// </summary>
+    Task<int> DeleteOrphanedCategoriesAsync(CancellationToken ct);
+
+    /// <summary>
+    /// Deletes every tag no recipe references any more, and returns how many were removed.
+    /// Idempotent — a no-op when nothing is orphaned.
+    /// </summary>
+    Task<int> DeleteOrphanedTagsAsync(CancellationToken ct);
 }

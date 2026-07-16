@@ -161,4 +161,29 @@ public class RecipeBusinessTests
 
         await _repository.DidNotReceive().UpdateAsync(Arg.Any<int>(), Arg.Any<Recipe>(), Arg.Any<CancellationToken>());
     }
+
+    [Fact]
+    public async Task DeleteAsync_reaps_both_orphaned_taxonomies_after_deleting_the_recipe()
+    {
+        _repository.DeleteAsync(7, Arg.Any<CancellationToken>()).Returns(true);
+
+        var result = await _sut.DeleteAsync(7, CancellationToken.None);
+
+        Assert.True(result);
+        await _repository.Received(1).DeleteOrphanedCategoriesAsync(Arg.Any<CancellationToken>());
+        await _repository.Received(1).DeleteOrphanedTagsAsync(Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    public async Task DeleteAsync_returns_false_and_reaps_nothing_when_recipe_is_missing()
+    {
+        _repository.DeleteAsync(7, Arg.Any<CancellationToken>()).Returns(false);
+
+        var result = await _sut.DeleteAsync(7, CancellationToken.None);
+
+        Assert.False(result);
+        // Nothing was removed, so nothing can have been orphaned — neither sweep must run.
+        await _repository.DidNotReceive().DeleteOrphanedCategoriesAsync(Arg.Any<CancellationToken>());
+        await _repository.DidNotReceive().DeleteOrphanedTagsAsync(Arg.Any<CancellationToken>());
+    }
 }

@@ -1,0 +1,39 @@
+- generic [ref=e2]:
+  - banner [ref=e3]:
+    - link "RecipeBox" [ref=e4] [cursor=pointer]:
+      - /url: /
+      - generic [ref=e5]: 🍲
+  - main [ref=e7]:
+    - article [ref=e151]:
+      - link "← All recipes" [ref=e152] [cursor=pointer]:
+        - /url: /
+      - generic [ref=e153]:
+        - generic [ref=e154]: 🍲
+        - generic [ref=e155]:
+          - heading "Garlic Butter Shrimp" [level=1] [ref=e156]
+          - paragraph [ref=e157]: Fast skillet shrimp in a lemony garlic butter sauce.
+          - generic [ref=e158]:
+            - generic [ref=e159]: 🍴 Serves 3
+            - list [ref=e160]:
+              - listitem [ref=e161]: Main Course
+        - link "Edit" [ref=e162] [cursor=pointer]:
+          - /url: /recipes/5/edit
+      - generic [ref=e163]:
+        - generic [ref=e164]:
+          - heading "Ingredients" [level=2] [ref=e165]
+          - list [ref=e166]:
+            - listitem [ref=e167]:
+              - generic [ref=e168]: 500 g
+              - generic [ref=e169]: Shrimp
+            - listitem [ref=e170]:
+              - generic [ref=e171]: 4 cloves
+              - generic [ref=e172]: Garlic
+        - generic [ref=e173]:
+          - heading "Steps" [level=2] [ref=e174]
+          - list [ref=e175]:
+            - listitem [ref=e176]:
+              - generic [ref=e177]: "1"
+              - generic [ref=e178]: Pat the shrimp dry and season with salt.
+            - listitem [ref=e179]:
+              - generic [ref=e180]: "2"
+              - generic [ref=e181]: Sear the shrimp, then add garlic and butter.

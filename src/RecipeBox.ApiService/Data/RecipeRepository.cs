@@ -174,6 +174,34 @@ public class RecipeRepository(RecipeDbContext db) : IRecipeRepository
         return existing;
     }
 
+    public async Task<bool> DeleteAsync(int id, CancellationToken ct)
+    {
+        // Tracked load with no includes: the required FK + cascade lets the database remove the owned
+        // ingredients and steps, and EF removes the category/tag join rows, so pulling those
+        // collections into memory would buy nothing.
+        var existing = await _db.Recipes.FirstOrDefaultAsync(r => r.Id == id, ct);
+        if (existing is null)
+        {
+            return false;
+        }
+
+        _db.Recipes.Remove(existing);
+        await _db.SaveChangesAsync(ct);
+        return true;
+    }
+
+    // Categories exist only as a by-product of the recipes that name them (see ResolveCategoriesAsync),
+    // so any row left with no recipes is residue rather than a deliberately empty category. Sweeping
+    // globally rather than only over one recipe's categories also clears anything earlier deletes left.
+    public async Task<int> DeleteOrphanedCategoriesAsync(CancellationToken ct) =>
+        await _db.Categories.Where(c => !c.Recipes.Any()).ExecuteDeleteAsync(ct);
+
+    // Tags are the same story as categories: created only by naming them on a recipe, so a tag with no
+    // recipes is residue. Kept as a separate sweep to mirror ResolveTagsAsync rather than fusing the
+    // two taxonomies into one method.
+    public async Task<int> DeleteOrphanedTagsAsync(CancellationToken ct) =>
+        await _db.Tags.Where(t => !t.Recipes.Any()).ExecuteDeleteAsync(ct);
+
     // ── Taxonomy resolution ──────────────────────────────────────────────────────────────────────
     // Map incoming carrier entities (name only) onto persisted rows: reuse the existing row for any
     // name already in the table, create a new one for the rest. De-duplicates by name so a repeated

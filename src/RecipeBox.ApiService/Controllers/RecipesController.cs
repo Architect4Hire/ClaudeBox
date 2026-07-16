@@ -49,4 +49,11 @@ public class RecipesController(IRecipeFacade facade) : ControllerBase
         var updated = await _facade.UpdateAsync(id, viewModel, ct);
         return updated is null ? NotFound() : Ok(updated);
     }
+
+    /// <summary>Deletes a recipe with its ingredients and ordered steps.</summary>
+    [HttpDelete("{id:int}")]
+    public async Task<IActionResult> Delete(int id, CancellationToken ct)
+    {
+        return await _facade.DeleteAsync(id, ct) ? NoContent() : NotFound();
+    }
 }

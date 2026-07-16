@@ -250,4 +250,39 @@ public class RecipeFacadeTests
         await _business.Received(1).ListAsync(null, Arg.Any<CancellationToken>());
         Assert.NotEqual(corrupt, await _cache.GetStringAsync(ListAllKey));
     }
+
+    [Fact]
+    public async Task DeleteAsync_invalidates_the_detail_and_list_entries()
+    {
+        await _cache.SetStringAsync(ListAllKey, JsonSerializer.Serialize(new List<RecipeSummaryServiceModel>
+        {
+            new(7, "Doomed", null, 2, Array.Empty<string>(), 1, 1),
+        }));
+        await _cache.SetStringAsync("recipe:7", JsonSerializer.Serialize(DetailModel(7, "Doomed")));
+        _business.DeleteAsync(7, Arg.Any<CancellationToken>()).Returns(true);
+
+        var result = await _sut.DeleteAsync(7, CancellationToken.None);
+
+        Assert.True(result);
+        // A stale entry here would serve a recipe that no longer exists.
+        Assert.Null(await _cache.GetStringAsync("recipe:7"));
+        Assert.Null(await _cache.GetStringAsync(ListAllKey));
+    }
+
+    [Fact]
+    public async Task DeleteAsync_leaves_the_cache_intact_when_recipe_is_missing()
+    {
+        var cachedList = JsonSerializer.Serialize(new List<RecipeSummaryServiceModel>
+        {
+            new(1, "Untouched", null, 2, Array.Empty<string>(), 1, 1),
+        });
+        await _cache.SetStringAsync(ListAllKey, cachedList);
+        _business.DeleteAsync(7, Arg.Any<CancellationToken>()).Returns(false);
+
+        var result = await _sut.DeleteAsync(7, CancellationToken.None);
+
+        Assert.False(result);
+        // Nothing was deleted, so the cached list is still accurate — evicting it would be needless churn.
+        Assert.Equal(cachedList, await _cache.GetStringAsync(ListAllKey));
+    }
 }

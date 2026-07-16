@@ -1,0 +1,40 @@
+- generic [ref=f1e2]:
+  - banner [ref=f1e3]:
+    - link "RecipeBox" [ref=f1e4] [cursor=pointer]:
+      - /url: /
+      - generic [ref=f1e5]: 🍲
+  - main [ref=f1e7]:
+    - generic [ref=f1e9]:
+      - heading "New recipe" [level=1] [ref=f1e10]
+      - generic [ref=f1e11]:
+        - generic [ref=f1e12]: Name
+        - textbox "Name" [ref=f1e13]
+      - generic [ref=f1e14]:
+        - generic [ref=f1e15]: Description
+        - textbox "Description" [ref=f1e16]
+      - generic [ref=f1e17]:
+        - generic [ref=f1e18]: Servings
+        - spinbutton "Servings" [ref=f1e19]: "1"
+      - group "Ingredients" [ref=f1e20]:
+        - generic [ref=f1e22]:
+          - textbox "Name" [ref=f1e23]
+          - spinbutton "Qty" [ref=f1e24]: "1"
+          - textbox "Unit" [ref=f1e25]
+          - button "Remove" [disabled] [ref=f1e26]
+        - button "Add ingredient" [ref=f1e27] [cursor=pointer]
+      - group "Steps" [ref=f1e28]:
+        - generic [ref=f1e30]:
+          - generic [ref=f1e31]: "1."
+          - textbox "Instruction" [ref=f1e32]
+          - button "Remove" [disabled] [ref=f1e33]
+        - button "Add step" [ref=f1e34] [cursor=pointer]
+      - group "Categories" [ref=f1e35]:
+        - paragraph [ref=f1e37]: Optional. Group this recipe under one or more categories.
+        - button "Add category" [ref=f1e38] [cursor=pointer]
+      - group "Tags" [ref=f1e39]:
+        - paragraph [ref=f1e41]: Optional. Add freeform labels like “quick” or “vegetarian”.
+        - button "Add tag" [ref=f1e42] [cursor=pointer]
+      - generic [ref=f1e43]:
+        - button "Create recipe" [ref=f1e44] [cursor=pointer]
+        - link "Cancel" [ref=f1e45] [cursor=pointer]:
+          - /url: /

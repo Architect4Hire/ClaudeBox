@@ -1,0 +1,117 @@
+- generic [ref=e2]:
+  - banner [ref=e3]:
+    - link "RecipeBox" [ref=e4] [cursor=pointer]:
+      - /url: /
+      - generic [ref=e5]: 🍲
+  - main [ref=e7]:
+    - generic [ref=e271]:
+      - generic [ref=e272]:
+        - generic [ref=e273]:
+          - heading "Recipes" [level=1] [ref=e274]
+          - paragraph [ref=e275]: Everything in your box, ready to cook.
+        - link "New recipe" [ref=e276] [cursor=pointer]:
+          - /url: /recipes/new
+          - generic [ref=e277]: +
+          - text: New recipe
+      - navigation "Filter recipes by category" [ref=e279]:
+        - button "All" [pressed] [ref=e280] [cursor=pointer]
+        - button "Breakfast" [ref=e281] [cursor=pointer]
+        - button "Dessert" [ref=e282] [cursor=pointer]
+        - button "Main Course" [ref=e283] [cursor=pointer]
+        - button "Soup" [ref=e284] [cursor=pointer]
+      - list [ref=e285]:
+        - listitem [ref=e286]:
+          - link [ref=e287] [cursor=pointer]:
+            - /url: /recipes/4
+            - generic [ref=e288]: 🍽️
+            - generic [ref=e290]:
+              - heading "Chocolate Brownies" [level=2] [ref=e291]
+              - paragraph [ref=e292]: Dense, fudgy brownies with a crackly top.
+              - generic [ref=e293]:
+                - generic [ref=e294]:
+                  - term [ref=e295]: Serves
+                  - definition [ref=e296]: "9"
+                - generic [ref=e297]:
+                  - term [ref=e298]: Ingredients
+                  - definition [ref=e299]: "5"
+                - generic [ref=e300]:
+                  - term [ref=e301]: Steps
+                  - definition [ref=e302]: "3"
+              - list [ref=e303]:
+                - listitem [ref=e304]: Dessert
+        - listitem [ref=e305]:
+          - link [ref=e306] [cursor=pointer]:
+            - /url: /recipes/2
+            - generic [ref=e307]: 🍽️
+            - generic [ref=e309]:
+              - heading "Classic Pancakes" [level=2] [ref=e310]
+              - paragraph [ref=e311]: Fluffy stovetop pancakes for a lazy weekend breakfast.
+              - generic [ref=e312]:
+                - generic [ref=e313]:
+                  - term [ref=e314]: Serves
+                  - definition [ref=e315]: "4"
+                - generic [ref=e316]:
+                  - term [ref=e317]: Ingredients
+                  - definition [ref=e318]: "5"
+                - generic [ref=e319]:
+                  - term [ref=e320]: Steps
+                  - definition [ref=e321]: "3"
+              - list [ref=e322]:
+                - listitem [ref=e323]: Breakfast
+        - listitem [ref=e324]:
+          - link [ref=e325] [cursor=pointer]:
+            - /url: /recipes/5
+            - generic [ref=e326]: 🍽️
+            - generic [ref=e328]:
+              - heading "Garlic Butter Shrimp" [level=2] [ref=e329]
+              - paragraph [ref=e330]: Fast skillet shrimp in a lemony garlic butter sauce.
+              - generic [ref=e331]:
+                - generic [ref=e332]:
+                  - term [ref=e333]: Serves
+                  - definition [ref=e334]: "6"
+                - generic [ref=e335]:
+                  - term [ref=e336]: Ingredients
+                  - definition [ref=e337]: "2"
+                - generic [ref=e338]:
+                  - term [ref=e339]: Steps
+                  - definition [ref=e340]: "3"
+              - list [ref=e341]:
+                - listitem [ref=e342]: Main Course
+        - listitem [ref=e343]:
+          - link [ref=e344] [cursor=pointer]:
+            - /url: /recipes/1
+            - generic [ref=e345]: 🍽️
+            - generic [ref=e347]:
+              - heading "Spaghetti Aglio e Olio" [level=2] [ref=e348]
+              - paragraph [ref=e349]: "A fast Roman classic: garlic gently fried in good olive oil, tossed with spaghetti and chilli."
+              - generic [ref=e350]:
+                - generic [ref=e351]:
+                  - term [ref=e352]: Serves
+                  - definition [ref=e353]: "2"
+                - generic [ref=e354]:
+                  - term [ref=e355]: Ingredients
+                  - definition [ref=e356]: "5"
+                - generic [ref=e357]:
+                  - term [ref=e358]: Steps
+                  - definition [ref=e359]: "3"
+              - list [ref=e360]:
+                - listitem [ref=e361]: Main Course
+        - listitem [ref=e362]:
+          - link [ref=e363] [cursor=pointer]:
+            - /url: /recipes/3
+            - generic [ref=e364]: 🍽️
+            - generic [ref=e366]:
+              - heading "Tomato Basil Soup" [level=2] [ref=e367]
+              - paragraph [ref=e368]: A silky, slow-simmered tomato soup finished with fresh basil.
+              - generic [ref=e369]:
+                - generic [ref=e370]:
+                  - term [ref=e371]: Serves
+                  - definition [ref=e372]: "4"
+                - generic [ref=e373]:
+                  - term [ref=e374]: Ingredients
+                  - definition [ref=e375]: "5"
+                - generic [ref=e376]:
+                  - term [ref=e377]: Steps
+                  - definition [ref=e378]: "3"
+              - list [ref=e379]:
+                - listitem [ref=e380]: Soup

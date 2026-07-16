@@ -1,0 +1,23 @@
+- generic [ref=f2e2]:
+  - banner [ref=f2e3]:
+    - link "RecipeBox" [ref=f2e4] [cursor=pointer]:
+      - /url: /
+      - generic [ref=f2e5]: 🍲
+  - main [ref=f2e7]:
+    - generic [ref=f2e8]:
+      - generic [ref=f2e9]:
+        - generic [ref=f2e10]:
+          - heading "Recipes" [level=1] [ref=f2e11]
+          - paragraph [ref=f2e12]: Everything in your box, ready to cook.
+        - link "New recipe" [ref=f2e13] [cursor=pointer]:
+          - /url: /recipes/new
+          - generic [ref=f2e14]: +
+          - text: New recipe
+      - navigation "Filter recipes by category" [ref=f2e16]:
+        - button "All" [pressed] [ref=f2e17] [cursor=pointer]
+        - button "Breakfast" [ref=f2e18] [cursor=pointer]
+        - button "Dessert" [ref=f2e19] [cursor=pointer]
+        - button "Main Course" [ref=f2e20] [cursor=pointer]
+        - button "Soup" [ref=f2e21] [cursor=pointer]
+        - button "Zzz-Probe-Cat" [ref=f2e22] [cursor=pointer]
+      - paragraph [ref=f2e23]: Loading recipes…

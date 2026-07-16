@@ -105,6 +105,23 @@ public class RecipeFacade(
         return updated;
     }
 
+    public async Task<bool> DeleteAsync(int id, CancellationToken ct)
+    {
+        // No validation step: there is no view model to validate, only a route id.
+        var deleted = await _business.DeleteAsync(id, ct);
+        if (!deleted)
+        {
+            // Nothing changed, so the cached copies are still accurate — leave them alone.
+            return false;
+        }
+
+        // The recipe is gone from both its own detail view and the unfiltered list.
+        await _cache.RemoveAsync(DetailKey(id), ct);
+        await _cache.RemoveAsync(ListAllKey, ct);
+
+        return true;
+    }
+
     private async Task<T?> GetCachedAsync<T>(string key, CancellationToken ct)
     {
         var json = await _cache.GetStringAsync(key, ct);
