@@ -10,7 +10,7 @@ src/
 ├── RecipeBox.AppHost/          # Aspire orchestrator — declares every resource
 ├── RecipeBox.ServiceDefaults/  # shared telemetry, health checks, resilience, discovery
 ├── RecipeBox.ApiService/       # ASP.NET Core API + EF Core (Npgsql)
-└── RecipeBox/                  # Angular app (launched by Aspire via AddJavaScriptApp)
+└── web/                        # Angular app (launched by Aspire via AddJavaScriptApp)
 ```
 
 Start with **Prompt 0** in the scaffolding doc (or `aspire init` to create the solution, then the

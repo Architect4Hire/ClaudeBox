@@ -25,7 +25,7 @@ src/
 ├── RecipeBox.AppHost/          # Aspire orchestrator — declares every resource
 ├── RecipeBox.ServiceDefaults/  # shared telemetry, health checks, resilience, discovery
 ├── RecipeBox.ApiService/       # ASP.NET Core API + EF Core
-└── RecipeBox/                  # Angular app (AddJavaScriptApp target)
+└── web/                        # Angular app (AddJavaScriptApp target)
 ```
 
 **Architecture conventions** — area detail auto-loads from `.claude/rules/` (`aspire.md`, `backend.md`, `frontend.md`). The essentials:
