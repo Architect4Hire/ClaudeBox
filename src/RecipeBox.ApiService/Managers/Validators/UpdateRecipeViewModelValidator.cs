@@ -43,8 +43,25 @@ public class UpdateRecipeViewModelValidator : AbstractValidator<UpdateRecipeView
 
         RuleFor(r => r.Steps)
             .Must(HaveUniqueOrders).WithMessage("Step orders must be unique within a recipe.");
+
+        // Taxonomy is optional (the lists may be null/empty), but any supplied name must be a
+        // non-blank value within the DB length, and names must not repeat within the request.
+        RuleForEach(r => r.Categories)
+            .NotEmpty().MaximumLength(100);
+        RuleFor(r => r.Categories)
+            .Must(HaveUniqueNames).WithMessage("Categories must be unique within a recipe.");
+
+        RuleForEach(r => r.Tags)
+            .NotEmpty().MaximumLength(100);
+        RuleFor(r => r.Tags)
+            .Must(HaveUniqueNames).WithMessage("Tags must be unique within a recipe.");
     }
 
     private static bool HaveUniqueOrders(IReadOnlyList<UpdateStepViewModel> steps) =>
         steps is null || steps.Select(s => s.Order).Distinct().Count() == steps.Count;
+
+    // Case-insensitive so "Dessert" and "dessert" can't both be attached to one recipe.
+    private static bool HaveUniqueNames(IReadOnlyList<string>? names) =>
+        names is null ||
+        names.Select(n => n?.Trim().ToLowerInvariant()).Distinct().Count() == names.Count;
 }

@@ -52,7 +52,7 @@ public class RecipeMappingsTests
     }
 
     [Fact]
-    public void UpdateViewModel_ToEntity_is_a_detached_carrier_without_id_or_taxonomy()
+    public void UpdateViewModel_ToEntity_is_a_detached_carrier_without_id()
     {
         var viewModel = new UpdateRecipeViewModel(
             Name: "Sourdough",
@@ -63,12 +63,49 @@ public class RecipeMappingsTests
 
         var entity = viewModel.ToEntity();
 
-        // The repository — not the mapper — owns identity and taxonomy on an update.
+        // The repository — not the mapper — owns identity on an update.
         Assert.Equal(0, entity.Id);
-        Assert.Empty(entity.Categories);
-        Assert.Empty(entity.Tags);
         Assert.Equal("Sourdough", entity.Name);
         Assert.Equal(2, entity.Steps.Count);
+        // Omitted taxonomy normalises to empty carriers (the update then clears the recipe's taxonomy).
+        Assert.Empty(entity.Categories);
+        Assert.Empty(entity.Tags);
+    }
+
+    [Fact]
+    public void CreateViewModel_ToEntity_maps_taxonomy_names_to_carrier_entities()
+    {
+        var viewModel = new CreateRecipeViewModel(
+            Name: "Brownies",
+            Description: null,
+            Servings: 9,
+            Ingredients: new List<CreateIngredientViewModel> { new("Chocolate", 200, "g") },
+            Steps: new List<CreateStepViewModel> { new(1, "Bake") },
+            Categories: new List<string> { "Dessert" },
+            Tags: new List<string> { "vegetarian", "comfort" });
+
+        var entity = viewModel.ToEntity();
+
+        Assert.Equal(new[] { "Dessert" }, entity.Categories.Select(c => c.Name).ToArray());
+        Assert.Equal(new[] { "vegetarian", "comfort" }, entity.Tags.Select(t => t.Name).ToArray());
+    }
+
+    [Fact]
+    public void UpdateViewModel_ToEntity_maps_taxonomy_names_to_carrier_entities()
+    {
+        var viewModel = new UpdateRecipeViewModel(
+            Name: "Sourdough",
+            Description: null,
+            Servings: 6,
+            Ingredients: new List<UpdateIngredientViewModel> { new("Rye", 3, "cups") },
+            Steps: new List<UpdateStepViewModel> { new(1, "Bake") },
+            Categories: new List<string> { "Baking" },
+            Tags: new List<string> { "rustic" });
+
+        var entity = viewModel.ToEntity();
+
+        Assert.Equal(new[] { "Baking" }, entity.Categories.Select(c => c.Name).ToArray());
+        Assert.Equal(new[] { "rustic" }, entity.Tags.Select(t => t.Name).ToArray());
     }
 
     [Fact]

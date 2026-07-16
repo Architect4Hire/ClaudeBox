@@ -139,4 +139,59 @@ public class CreateRecipeViewModelValidatorTests
 
         Assert.True(_sut.Validate(model).IsValid);
     }
+
+    [Fact]
+    public void Omitted_taxonomy_is_allowed()
+    {
+        // Valid() leaves Categories/Tags at their default (null); that must pass.
+        Assert.True(_sut.Validate(Valid()).IsValid);
+    }
+
+    [Fact]
+    public void Supplied_taxonomy_passes()
+    {
+        var model = Valid() with
+        {
+            Categories = new List<string> { "Dessert" },
+            Tags = new List<string> { "quick", "vegetarian" },
+        };
+
+        Assert.True(_sut.Validate(model).IsValid);
+    }
+
+    [Fact]
+    public void Blank_category_name_fails()
+    {
+        var model = Valid() with { Categories = new List<string> { "" } };
+        Assert.False(_sut.Validate(model).IsValid);
+    }
+
+    [Fact]
+    public void Category_over_100_chars_fails()
+    {
+        var model = Valid() with { Categories = new List<string> { new('c', 101) } };
+        Assert.False(_sut.Validate(model).IsValid);
+    }
+
+    [Fact]
+    public void Duplicate_categories_fail_case_insensitively_with_message()
+    {
+        var model = Valid() with { Categories = new List<string> { "Dessert", "dessert" } };
+
+        var result = _sut.Validate(model);
+
+        Assert.False(result.IsValid);
+        Assert.Contains(result.Errors, e => e.ErrorMessage == "Categories must be unique within a recipe.");
+    }
+
+    [Fact]
+    public void Duplicate_tags_fail_with_message()
+    {
+        var model = Valid() with { Tags = new List<string> { "quick", "quick" } };
+
+        var result = _sut.Validate(model);
+
+        Assert.False(result.IsValid);
+        Assert.Contains(result.Errors, e => e.ErrorMessage == "Tags must be unique within a recipe.");
+    }
 }

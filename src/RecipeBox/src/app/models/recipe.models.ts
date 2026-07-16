@@ -54,18 +54,23 @@ export interface CreateStepRequest {
   instruction: string;
 }
 
-/** Inbound shape for creating a recipe. Mirrors `CreateRecipeViewModel`. */
+/**
+ * Inbound shape for creating a recipe. Mirrors `CreateRecipeViewModel`. `categories`/`tags` are
+ * free-text names; the API resolves each to an existing taxonomy row or creates one.
+ */
 export interface CreateRecipeRequest {
   name: string;
   description: string | null;
   servings: number;
   ingredients: CreateIngredientRequest[];
   steps: CreateStepRequest[];
+  categories: string[];
+  tags: string[];
 }
 
 /**
- * Inbound shape for replacing a recipe's editable content. Mirrors `UpdateRecipeViewModel` — the
- * same fields as a create (taxonomy is managed elsewhere, so an update leaves categories/tags alone).
+ * Inbound shape for replacing a recipe's editable content. Mirrors `UpdateRecipeViewModel` — the same
+ * fields as a create; an update replaces the recipe's categories and tags with the supplied names.
  */
 export interface UpdateRecipeRequest {
   name: string;
@@ -73,4 +78,6 @@ export interface UpdateRecipeRequest {
   servings: number;
   ingredients: CreateIngredientRequest[];
   steps: CreateStepRequest[];
+  categories: string[];
+  tags: string[];
 }

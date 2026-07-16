@@ -1,6 +1,11 @@
 <header class="list-header">
-  <h1>Recipes</h1>
-  <a class="new-button" routerLink="/recipes/new">New recipe</a>
+  <div class="list-header__text">
+    <h1>Recipes</h1>
+    <p class="list-header__sub">Everything in your box, ready to cook.</p>
+  </div>
+  <a class="new-button" routerLink="/recipes/new">
+    <span class="new-button__plus" aria-hidden="true">+</span> New recipe
+  </a>
 </header>
 
 @if (categories$ | async; as categories) {
@@ -19,22 +24,27 @@
       @for (recipe of recipes; track recipe.id) {
         <li>
           <a class="card" [routerLink]="['/recipes', recipe.id]">
-            <h2 class="card__title">{{ recipe.name }}</h2>
-            @if (recipe.description) {
-              <p class="card__description">{{ recipe.description }}</p>
-            }
-            <dl class="card__meta">
-              <div><dt>Serves</dt><dd>{{ recipe.servings }}</dd></div>
-              <div><dt>Ingredients</dt><dd>{{ recipe.ingredientCount }}</dd></div>
-              <div><dt>Steps</dt><dd>{{ recipe.stepCount }}</dd></div>
-            </dl>
-            @if (recipe.categories.length) {
-              <ul class="card__tags">
-                @for (category of recipe.categories; track category) {
-                  <li>{{ category }}</li>
-                }
-              </ul>
-            }
+            <span class="card__band" aria-hidden="true">
+              <span class="card__band-emoji">🍽️</span>
+            </span>
+            <div class="card__body">
+              <h2 class="card__title">{{ recipe.name }}</h2>
+              @if (recipe.description) {
+                <p class="card__description">{{ recipe.description }}</p>
+              }
+              <dl class="card__meta">
+                <div><dt>Serves</dt><dd>{{ recipe.servings }}</dd></div>
+                <div><dt>Ingredients</dt><dd>{{ recipe.ingredientCount }}</dd></div>
+                <div><dt>Steps</dt><dd>{{ recipe.stepCount }}</dd></div>
+              </dl>
+              @if (recipe.categories.length) {
+                <ul class="card__tags">
+                  @for (category of recipe.categories; track category) {
+                    <li>{{ category }}</li>
+                  }
+                </ul>
+              }
+            </div>
           </a>
         </li>
       }

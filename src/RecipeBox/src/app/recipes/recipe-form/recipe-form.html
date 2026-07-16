@@ -55,6 +55,30 @@
     <button type="button" class="add" (click)="addStep()">Add step</button>
   </fieldset>
 
+  <fieldset class="group" formArrayName="categories">
+    <legend>Categories</legend>
+    <p class="group__hint">Optional. Group this recipe under one or more categories.</p>
+    @for (category of categories.controls; track category; let i = $index) {
+      <div class="row">
+        <input class="row__grow" type="text" placeholder="e.g. Dessert" [formControlName]="i" />
+        <button type="button" class="row__remove" (click)="removeCategory(i)">Remove</button>
+      </div>
+    }
+    <button type="button" class="add" (click)="addCategory()">Add category</button>
+  </fieldset>
+
+  <fieldset class="group" formArrayName="tags">
+    <legend>Tags</legend>
+    <p class="group__hint">Optional. Add freeform labels like “quick” or “vegetarian”.</p>
+    @for (tag of tags.controls; track tag; let i = $index) {
+      <div class="row">
+        <input class="row__grow" type="text" placeholder="e.g. vegetarian" [formControlName]="i" />
+        <button type="button" class="row__remove" (click)="removeTag(i)">Remove</button>
+      </div>
+    }
+    <button type="button" class="add" (click)="addTag()">Add tag</button>
+  </fieldset>
+
   <div class="actions">
     <button type="submit" class="save" [disabled]="submitting() || loadFailed()">
       {{ submitting() ? 'Saving…' : isEdit() ? 'Save changes' : 'Create recipe' }}

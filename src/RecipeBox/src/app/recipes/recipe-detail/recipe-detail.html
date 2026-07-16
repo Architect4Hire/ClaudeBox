@@ -2,43 +2,54 @@
   @switch (state.status) {
     @case ('loaded') {
       <article class="recipe">
+        <a class="back" routerLink="/">← All recipes</a>
+
         <header class="recipe__header">
-          <a class="back" routerLink="/">← All recipes</a>
-          <h1>{{ state.recipe.name }}</h1>
-          @if (state.recipe.description) {
-            <p class="recipe__description">{{ state.recipe.description }}</p>
-          }
-          <p class="recipe__servings">Serves {{ state.recipe.servings }}</p>
-          @if (state.recipe.categories.length) {
-            <ul class="recipe__tags">
-              @for (category of state.recipe.categories; track category) {
-                <li>{{ category }}</li>
+          <span class="recipe__hero" aria-hidden="true">🍲</span>
+          <div class="recipe__heading">
+            <h1>{{ state.recipe.name }}</h1>
+            @if (state.recipe.description) {
+              <p class="recipe__description">{{ state.recipe.description }}</p>
+            }
+            <div class="recipe__facts">
+              <span class="recipe__servings">🍴 Serves {{ state.recipe.servings }}</span>
+              @if (state.recipe.categories.length) {
+                <ul class="recipe__tags">
+                  @for (category of state.recipe.categories; track category) {
+                    <li>{{ category }}</li>
+                  }
+                </ul>
               }
-            </ul>
-          }
+            </div>
+          </div>
           <a class="edit" [routerLink]="['/recipes', state.recipe.id, 'edit']">Edit</a>
         </header>
 
-        <section>
-          <h2>Ingredients</h2>
-          <ul class="ingredients">
-            @for (ingredient of state.recipe.ingredients; track $index) {
-              <li>
-                <span class="ingredients__qty">{{ ingredient.quantity }}{{ ingredient.unit ? ' ' + ingredient.unit : '' }}</span>
-                {{ ingredient.name }}
-              </li>
-            }
-          </ul>
-        </section>
+        <div class="recipe__grid">
+          <section class="panel">
+            <h2>Ingredients</h2>
+            <ul class="ingredients">
+              @for (ingredient of state.recipe.ingredients; track $index) {
+                <li>
+                  <span class="ingredients__qty">{{ ingredient.quantity }}{{ ingredient.unit ? ' ' + ingredient.unit : '' }}</span>
+                  <span class="ingredients__name">{{ ingredient.name }}</span>
+                </li>
+              }
+            </ul>
+          </section>
 
-        <section>
-          <h2>Steps</h2>
-          <ol class="steps">
-            @for (step of state.recipe.steps; track step.order) {
-              <li>{{ step.instruction }}</li>
-            }
-          </ol>
-        </section>
+          <section class="panel">
+            <h2>Steps</h2>
+            <ol class="steps">
+              @for (step of state.recipe.steps; track step.order) {
+                <li>
+                  <span class="steps__num" aria-hidden="true">{{ $index + 1 }}</span>
+                  <span class="steps__text">{{ step.instruction }}</span>
+                </li>
+              }
+            </ol>
+          </section>
+        </div>
       </article>
     }
     @case ('not-found') {

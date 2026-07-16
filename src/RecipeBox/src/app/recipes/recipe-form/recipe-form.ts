@@ -65,6 +65,10 @@ export class RecipeForm {
     servings: this.fb.control(1, [Validators.required, Validators.min(1)]),
     ingredients: this.fb.array<IngredientGroup>([]),
     steps: this.fb.array<StepGroup>([]),
+    // Taxonomy is optional: each is a plain free-text name. Blank rows are dropped on submit, so no
+    // `required` here — only the DB max-length is enforced client-side.
+    categories: this.fb.array<FormControl<string>>([]),
+    tags: this.fb.array<FormControl<string>>([]),
   });
 
   constructor() {
@@ -101,6 +105,14 @@ export class RecipeForm {
     return this.form.controls.steps;
   }
 
+  get categories(): FormArray<FormControl<string>> {
+    return this.form.controls.categories;
+  }
+
+  get tags(): FormArray<FormControl<string>> {
+    return this.form.controls.tags;
+  }
+
   addIngredient(): void {
     this.ingredients.push(
       this.fb.group({
@@ -125,6 +137,22 @@ export class RecipeForm {
 
   removeStep(index: number): void {
     this.steps.removeAt(index);
+  }
+
+  addCategory(value = ''): void {
+    this.categories.push(this.fb.control(value, [Validators.maxLength(100)]));
+  }
+
+  removeCategory(index: number): void {
+    this.categories.removeAt(index);
+  }
+
+  addTag(value = ''): void {
+    this.tags.push(this.fb.control(value, [Validators.maxLength(100)]));
+  }
+
+  removeTag(index: number): void {
+    this.tags.removeAt(index);
   }
 
   submit(): void {
@@ -189,6 +217,16 @@ export class RecipeForm {
         }),
       );
     }
+
+    this.categories.clear();
+    for (const category of recipe.categories) {
+      this.addCategory(category);
+    }
+
+    this.tags.clear();
+    for (const tag of recipe.tags) {
+      this.addTag(tag);
+    }
   }
 
   /** Projects the form value onto the wire request, deriving 1-based step order from position. */
@@ -213,6 +251,27 @@ export class RecipeForm {
       servings: value.servings,
       ingredients,
       steps,
+      categories: this.normalizeNames(value.categories),
+      tags: this.normalizeNames(value.tags),
     };
+  }
+
+  /** Trims, drops blanks, and de-duplicates names case-insensitively (keeping the first spelling). */
+  private normalizeNames(names: string[]): string[] {
+    const seen = new Set<string>();
+    const result: string[] = [];
+    for (const raw of names) {
+      const name = raw.trim();
+      if (name === '') {
+        continue;
+      }
+      const key = name.toLowerCase();
+      if (seen.has(key)) {
+        continue;
+      }
+      seen.add(key);
+      result.push(name);
+    }
+    return result;
   }
 }

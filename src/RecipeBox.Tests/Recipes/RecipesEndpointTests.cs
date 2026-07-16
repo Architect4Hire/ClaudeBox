@@ -130,6 +130,64 @@ public class RecipesEndpointTests
     }
 
     [Fact]
+    public async Task Create_with_taxonomy_persists_and_round_trips_categories_and_tags()
+    {
+        await using var factory = new RecipeApiFactory();
+        await factory.SeedAsync(_ => Task.CompletedTask);
+        var client = factory.CreateClient();
+
+        var request = new CreateRecipeViewModel(
+            Name: "Brownies",
+            Description: "Fudgy",
+            Servings: 9,
+            Ingredients: new List<CreateIngredientViewModel> { new("Chocolate", 200, "g") },
+            Steps: new List<CreateStepViewModel> { new(1, "Bake") },
+            Categories: new List<string> { "Dessert" },
+            Tags: new List<string> { "vegetarian", "comfort" });
+
+        var response = await client.PostAsJsonAsync("/api/recipes", request);
+
+        Assert.Equal(HttpStatusCode.Created, response.StatusCode);
+        var created = await response.Content.ReadFromJsonAsync<RecipeDetailServiceModel>();
+        Assert.NotNull(created);
+
+        var fetched = await client.GetFromJsonAsync<RecipeDetailServiceModel>($"/api/recipes/{created!.Id}");
+        Assert.Equal(new[] { "Dessert" }, fetched!.Categories);
+        Assert.Equal(new[] { "vegetarian", "comfort" }, fetched.Tags.OrderByDescending(t => t).ToArray());
+    }
+
+    [Fact]
+    public async Task Update_replaces_taxonomy_with_the_supplied_names()
+    {
+        await using var factory = new RecipeApiFactory();
+        var id = 0;
+        await factory.SeedAsync(async db =>
+        {
+            var recipe = SampleRecipe("Bread", "Baking"); // starts in category "Baking", no tags
+            db.Recipes.Add(recipe);
+            await db.SaveChangesAsync();
+            id = recipe.Id;
+        });
+        var client = factory.CreateClient();
+
+        var request = new UpdateRecipeViewModel(
+            Name: "Sourdough",
+            Description: "Tangy",
+            Servings: 8,
+            Ingredients: new List<UpdateIngredientViewModel> { new("Starter", 1, "cup") },
+            Steps: new List<UpdateStepViewModel> { new(1, "Feed") },
+            Categories: new List<string> { "Baking", "Artisan" },
+            Tags: new List<string> { "rustic" });
+
+        var response = await client.PutAsJsonAsync($"/api/recipes/{id}", request);
+        Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+
+        var fetched = await client.GetFromJsonAsync<RecipeDetailServiceModel>($"/api/recipes/{id}");
+        Assert.Equal(new[] { "Artisan", "Baking" }, fetched!.Categories.OrderBy(c => c).ToArray());
+        Assert.Equal(new[] { "rustic" }, fetched.Tags);
+    }
+
+    [Fact]
     public async Task Create_returns_400_for_invalid_request()
     {
         await using var factory = new RecipeApiFactory();

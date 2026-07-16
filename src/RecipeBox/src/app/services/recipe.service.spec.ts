@@ -90,6 +90,8 @@ describe('RecipeService', () => {
       servings: 1,
       ingredients: [{ name: 'Bread', quantity: 2, unit: null }],
       steps: [{ order: 1, instruction: 'Toast it' }],
+      categories: ['Breakfast'],
+      tags: ['quick'],
     };
     const created: RecipeDetailDto = {
       id: 42,
@@ -120,6 +122,8 @@ describe('RecipeService', () => {
       servings: 8,
       ingredients: [{ name: 'Starter', quantity: 1, unit: 'cup' }],
       steps: [{ order: 1, instruction: 'Feed' }, { order: 2, instruction: 'Bake' }],
+      categories: ['Baking'],
+      tags: ['rustic'],
     };
     const updated: RecipeDetailDto = {
       id: 5,

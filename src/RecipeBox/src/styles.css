@@ -1,1 +1,106 @@
-/* You can add global styles to this file, and also import other style files */
+/* ==========================================================================
+   RecipeBox — global design system
+   Warm, appetizing, editorial. Tokens first, then base element styling.
+   ========================================================================== */
+
+:root {
+  /* Warm neutrals */
+  --rb-bg: #faf6f0;
+  --rb-bg-tint: #f4ece2;
+  --rb-surface: #ffffff;
+  --rb-surface-muted: #fbf6ef;
+  --rb-border: #ece1d4;
+  --rb-border-strong: #ddccb8;
+
+  /* Ink */
+  --rb-text: #2c2320;
+  --rb-text-muted: #857468;
+  --rb-text-subtle: #a2938a;
+
+  /* Warm brand — paprika + amber */
+  --rb-primary: #e05a2b;
+  --rb-primary-strong: #c4481d;
+  --rb-primary-soft: #fbeadf;
+  --rb-primary-ink: #9c3b16;
+  --rb-accent: #f2a63d;
+  --rb-gradient: linear-gradient(135deg, #f2a63d 0%, #e05a2b 55%, #d64545 100%);
+
+  /* Feedback */
+  --rb-danger: #c0243a;
+  --rb-danger-soft: #fdecef;
+
+  /* Radius */
+  --rb-r-sm: 0.5rem;
+  --rb-r-md: 0.75rem;
+  --rb-r-lg: 1.125rem;
+  --rb-r-pill: 999px;
+
+  /* Shadow — warm-tinted */
+  --rb-shadow-sm: 0 1px 2px rgba(76, 45, 26, 0.06), 0 1px 3px rgba(76, 45, 26, 0.05);
+  --rb-shadow-md: 0 6px 16px rgba(76, 45, 26, 0.08), 0 2px 6px rgba(76, 45, 26, 0.05);
+  --rb-shadow-lg: 0 18px 40px rgba(76, 45, 26, 0.14), 0 6px 14px rgba(76, 45, 26, 0.08);
+
+  /* Motion */
+  --rb-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --rb-fast: 0.14s;
+  --rb-med: 0.24s;
+
+  /* Type */
+  --rb-font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  --rb-font-display: 'Fraunces', 'Iowan Old Style', 'Palatino Linotype', Palatino, Georgia, serif;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: var(--rb-font-sans);
+  color: var(--rb-text);
+  background: var(--rb-bg);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--rb-font-display);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--rb-text);
+  line-height: 1.15;
+}
+
+a {
+  color: var(--rb-primary-ink);
+}
+
+/* Consistent, warm focus ring for keyboard users */
+:where(a, button, input, textarea, select):focus-visible {
+  outline: 2px solid var(--rb-primary);
+  outline-offset: 2px;
+  border-radius: var(--rb-r-sm);
+}
+
+::selection {
+  background: var(--rb-primary-soft);
+  color: var(--rb-primary-ink);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}

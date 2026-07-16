@@ -71,6 +71,11 @@ public class RecipeRepository(RecipeDbContext db) : IRecipeRepository
 
     public async Task<Recipe> AddAsync(Recipe recipe, CancellationToken ct)
     {
+        // Resolve taxonomy by name against existing rows so a shared category/tag (e.g. "Dessert")
+        // is reused rather than re-inserted — the unique-name indexes would otherwise reject a duplicate.
+        recipe.Categories = await ResolveCategoriesAsync(recipe.Categories, ct);
+        recipe.Tags = await ResolveTagsAsync(recipe.Tags, ct);
+
         _db.Recipes.Add(recipe);
         try
         {
@@ -94,11 +99,15 @@ public class RecipeRepository(RecipeDbContext db) : IRecipeRepository
 
     public async Task<Recipe?> UpdateAsync(int id, Recipe incoming, CancellationToken ct)
     {
-        // Load the recipe tracked, with the two owned collections we replace. Categories/tags are left
-        // as-is, so they are deliberately not included here.
+        // Load the recipe tracked, with every collection an update replaces: the owned children
+        // (ingredients, steps) and both taxonomies. AsSplitQuery keeps the four collection includes from
+        // cartesian-exploding into one flattened result set.
         var existing = await _db.Recipes
+            .AsSplitQuery()
             .Include(r => r.Ingredients)
             .Include(r => r.Steps)
+            .Include(r => r.Categories)
+            .Include(r => r.Tags)
             .FirstOrDefaultAsync(r => r.Id == id, ct);
 
         if (existing is null)
@@ -131,6 +140,21 @@ public class RecipeRepository(RecipeDbContext db) : IRecipeRepository
             existing.Steps.Add(new Step { Order = step.Order, Instruction = step.Instruction });
         }
 
+        // Replace taxonomy wholesale, the same "clear + re-add" shape as the owned children. Clearing a
+        // many-to-many collection drops only the join rows, not the Category/Tag rows; the resolve step
+        // then reuses existing rows by name (or creates missing ones), so no duplicates are inserted.
+        existing.Categories.Clear();
+        foreach (var category in await ResolveCategoriesAsync(incoming.Categories, ct))
+        {
+            existing.Categories.Add(category);
+        }
+
+        existing.Tags.Clear();
+        foreach (var tag in await ResolveTagsAsync(incoming.Tags, ct))
+        {
+            existing.Tags.Add(tag);
+        }
+
         try
         {
             await _db.SaveChangesAsync(ct);
@@ -148,5 +172,46 @@ public class RecipeRepository(RecipeDbContext db) : IRecipeRepository
         }
 
         return existing;
+    }
+
+    // ── Taxonomy resolution ──────────────────────────────────────────────────────────────────────
+    // Map incoming carrier entities (name only) onto persisted rows: reuse the existing row for any
+    // name already in the table, create a new one for the rest. De-duplicates by name so a repeated
+    // name in the request can't attach the same taxonomy twice. Names are matched exactly (the unique
+    // index on Category/Tag name is case-sensitive), so callers should normalise casing upstream.
+
+    private async Task<List<Category>> ResolveCategoriesAsync(
+        ICollection<Category> incoming, CancellationToken ct)
+    {
+        var names = incoming.Select(c => c.Name).Distinct().ToList();
+        if (names.Count == 0)
+        {
+            return [];
+        }
+
+        var existing = await _db.Categories
+            .Where(c => names.Contains(c.Name))
+            .ToDictionaryAsync(c => c.Name, ct);
+
+        return names
+            .Select(name => existing.TryGetValue(name, out var found) ? found : new Category { Name = name })
+            .ToList();
+    }
+
+    private async Task<List<Tag>> ResolveTagsAsync(ICollection<Tag> incoming, CancellationToken ct)
+    {
+        var names = incoming.Select(t => t.Name).Distinct().ToList();
+        if (names.Count == 0)
+        {
+            return [];
+        }
+
+        var existing = await _db.Tags
+            .Where(t => names.Contains(t.Name))
+            .ToDictionaryAsync(t => t.Name, ct);
+
+        return names
+            .Select(name => existing.TryGetValue(name, out var found) ? found : new Tag { Name = name })
+            .ToList();
     }
 }

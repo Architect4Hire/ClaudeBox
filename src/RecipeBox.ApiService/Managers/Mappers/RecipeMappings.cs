@@ -29,10 +29,14 @@ public static class RecipeMappings
             Steps = viewModel.Steps
                 .Select(s => new Step { Order = s.Order, Instruction = s.Instruction })
                 .ToList(),
+            // Taxonomy carries only names here; the repository resolves each to an existing row or a
+            // new one on save. An omitted (null) list means "no categories/tags".
+            Categories = ToCategories(viewModel.Categories),
+            Tags = ToTags(viewModel.Tags),
         };
 
     // A detached carrier for the edited values: the repository reconciles these onto the tracked
-    // entity (scalar overwrite + child-collection replace), so no Id or taxonomy is set here.
+    // entity (scalar overwrite + child-collection replace, including taxonomy), so no Id is set here.
     public static Recipe ToEntity(this UpdateRecipeViewModel viewModel) =>
         new()
         {
@@ -45,7 +49,16 @@ public static class RecipeMappings
             Steps = viewModel.Steps
                 .Select(s => new Step { Order = s.Order, Instruction = s.Instruction })
                 .ToList(),
+            Categories = ToCategories(viewModel.Categories),
+            Tags = ToTags(viewModel.Tags),
         };
+
+    // Names → carrier entities. Null (an omitted list) and empty both yield an empty collection.
+    private static List<Category> ToCategories(IReadOnlyList<string>? names) =>
+        (names ?? []).Select(name => new Category { Name = name }).ToList();
+
+    private static List<Tag> ToTags(IReadOnlyList<string>? names) =>
+        (names ?? []).Select(name => new Tag { Name = name }).ToList();
 
     // ── domain → service model (business layer) ──────────────────────────────────────────────────
 

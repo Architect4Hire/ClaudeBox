@@ -228,10 +228,10 @@ public class RecipeRepositoryTests : IDisposable
     }
 
     [Fact]
-    public async Task UpdateAsync_leaves_categories_and_tags_untouched()
+    public async Task UpdateAsync_replaces_taxonomy_and_reuses_existing_rows_by_name()
     {
-        // UpdateAsync deliberately does not Include categories/tags — it replaces only scalars +
-        // ingredients + steps. This guards that documented invariant: an edit must not clear taxonomy.
+        // An edit now replaces taxonomy wholesale (like ingredients/steps): a name it keeps ("Baking")
+        // must reuse the existing row rather than duplicate it, and a name it drops ("Rustic") must go.
         int id;
         await using (var context = NewContext())
         {
@@ -254,6 +254,8 @@ public class RecipeRepositoryTests : IDisposable
         {
             Name = "Sourdough",
             Servings = 8,
+            Categories = { new Category { Name = "Baking" }, new Category { Name = "Dessert" } },
+            Tags = { new Tag { Name = "Sweet" } },
             Ingredients = { new Ingredient { Name = "Starter", Quantity = 1, Unit = "cup" } },
             Steps = { new Step { Order = 1, Instruction = "Feed" } },
         };
@@ -266,8 +268,35 @@ public class RecipeRepositoryTests : IDisposable
             .Include(r => r.Tags)
             .FirstAsync(r => r.Id == id);
         Assert.Equal("Sourdough", reloaded.Name);
-        Assert.Equal("Baking", Assert.Single(reloaded.Categories).Name);
-        Assert.Equal("Rustic", Assert.Single(reloaded.Tags).Name);
+        Assert.Equal(new[] { "Baking", "Dessert" }, reloaded.Categories.Select(c => c.Name).OrderBy(n => n).ToArray());
+        Assert.Equal(new[] { "Sweet" }, reloaded.Tags.Select(t => t.Name).ToArray());
+        // "Baking" was reused, not duplicated; the dropped "Rustic" tag row is now unreferenced.
+        Assert.Equal(1, await verify.Categories.CountAsync(c => c.Name == "Baking"));
+    }
+
+    [Fact]
+    public async Task AddAsync_reuses_an_existing_category_by_name_instead_of_duplicating()
+    {
+        await SeedAsync(Recipe("Bread", "Baking", ingredients: 1, steps: 1));
+        var sut = new RecipeRepository(NewContext());
+
+        var second = new Recipe
+        {
+            Name = "Cake",
+            Servings = 6,
+            // Same category name as the seeded recipe — the repository must attach the existing row.
+            Categories = { new Category { Name = "Baking" } },
+            Tags = { new Tag { Name = "sweet" } },
+            Ingredients = { new Ingredient { Name = "Sugar", Quantity = 2, Unit = "cups" } },
+            Steps = { new Step { Order = 1, Instruction = "Bake" } },
+        };
+
+        await sut.AddAsync(second, CancellationToken.None);
+
+        await using var verify = NewContext();
+        // Exactly one "Baking" row, shared by both recipes.
+        Assert.Equal(1, await verify.Categories.CountAsync(c => c.Name == "Baking"));
+        Assert.Equal(2, await verify.Recipes.CountAsync(r => r.Categories.Any(c => c.Name == "Baking")));
     }
 
     [Fact]

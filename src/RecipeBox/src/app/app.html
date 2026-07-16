@@ -1,5 +1,8 @@
 <header class="app-header">
-  <a class="app-header__brand" routerLink="/">🍲 {{ title() }}</a>
+  <a class="app-header__brand" routerLink="/">
+    <span class="app-header__logo" aria-hidden="true">🍲</span>
+    <span class="app-header__word">{{ title() }}</span>
+  </a>
 </header>
 
 <main class="app-main">

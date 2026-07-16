@@ -60,6 +60,8 @@ describe('RecipeForm', () => {
       servings: 4,
       ingredients: [{ name: 'Flour', quantity: 2, unit: 'cups' }],
       steps: [{ order: 1, instruction: 'Mix' }],
+      categories: [],
+      tags: [],
     });
     expect(navigate).toHaveBeenCalledWith(['/recipes', 42]);
   });
@@ -82,8 +84,58 @@ describe('RecipeForm', () => {
       servings: 2,
       ingredients: [{ name: 'Water', quantity: 1.5, unit: 'L' }],
       steps: [{ order: 1, instruction: 'Boil' }],
+      categories: [],
+      tags: [],
     });
     expect(navigate).toHaveBeenCalledWith(['/recipes', 7]);
+  });
+
+  it('submits normalized categories and tags (trimmed, de-duped, blanks dropped)', async () => {
+    const create = vi.fn(() => of({ ...EXISTING, id: 5 }));
+    const { fixture } = await setup({}, { create });
+    const form = fixture.componentInstance;
+
+    form.form.patchValue({ name: 'Brownies', description: '', servings: 9 });
+    form.ingredients.at(0).patchValue({ name: 'Chocolate', quantity: 200, unit: 'g' });
+    form.steps.at(0).patchValue({ instruction: 'Bake' });
+
+    // A blank row is dropped; a case-different duplicate collapses to the first spelling.
+    form.addCategory('Dessert');
+    form.addCategory('  ');
+    form.addTag('vegetarian');
+    form.addTag('Vegetarian');
+    form.tags.at(0).markAsUntouched();
+
+    form.submit();
+
+    expect(create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        categories: ['Dessert'],
+        tags: ['vegetarian'],
+      }),
+    );
+  });
+
+  it('loads existing categories and tags into the form in edit mode', async () => {
+    const withTaxonomy: RecipeDetailDto = {
+      ...EXISTING,
+      categories: ['Soup', 'Comfort'],
+      tags: ['warm'],
+    };
+    const getById = vi.fn(() => of(withTaxonomy));
+    const update = vi.fn(() => of(withTaxonomy));
+    const { fixture } = await setup({ id: '7' }, { getById, update });
+    const form = fixture.componentInstance;
+
+    expect(form.categories.controls.map((c) => c.value)).toEqual(['Soup', 'Comfort']);
+    expect(form.tags.controls.map((c) => c.value)).toEqual(['warm']);
+
+    form.submit();
+
+    expect(update).toHaveBeenCalledWith(
+      7,
+      expect.objectContaining({ categories: ['Soup', 'Comfort'], tags: ['warm'] }),
+    );
   });
 
   it('surfaces a conflict message and does not navigate on a 409', async () => {

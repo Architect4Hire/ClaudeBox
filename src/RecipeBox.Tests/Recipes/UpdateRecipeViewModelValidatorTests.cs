@@ -106,4 +106,34 @@ public class UpdateRecipeViewModelValidatorTests
 
         Assert.True(_sut.Validate(model).IsValid);
     }
+
+    [Fact]
+    public void Supplied_taxonomy_passes()
+    {
+        var model = Valid() with
+        {
+            Categories = new List<string> { "Baking" },
+            Tags = new List<string> { "rustic" },
+        };
+
+        Assert.True(_sut.Validate(model).IsValid);
+    }
+
+    [Fact]
+    public void Duplicate_categories_fail_case_insensitively_with_message()
+    {
+        var model = Valid() with { Categories = new List<string> { "Baking", "baking" } };
+
+        var result = _sut.Validate(model);
+
+        Assert.False(result.IsValid);
+        Assert.Contains(result.Errors, e => e.ErrorMessage == "Categories must be unique within a recipe.");
+    }
+
+    [Fact]
+    public void Blank_tag_name_fails()
+    {
+        var model = Valid() with { Tags = new List<string> { "" } };
+        Assert.False(_sut.Validate(model).IsValid);
+    }
 }

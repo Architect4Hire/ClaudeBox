@@ -24,9 +24,9 @@ public class RecipeFacade(
     private readonly IValidator<UpdateRecipeViewModel> _updateValidator = updateValidator;
     private readonly IDistributedCache _cache = cache;
 
-    // The unfiltered list is the only cached list: a newly created recipe carries no categories yet
-    // (create v1 takes ingredients + steps only), so category-filtered lists cannot be affected by a
-    // create and are served straight from the business layer.
+    // The unfiltered list is the only cached list. A create/update can now attach categories, so it
+    // can affect category-filtered lists too — but those are never cached (they bypass to the business
+    // layer, see ListAsync), so invalidating this one unfiltered key on write is still sufficient.
     private const string ListAllKey = "recipes:list:all";
 
     private static string DetailKey(int id) => $"recipe:{id}";

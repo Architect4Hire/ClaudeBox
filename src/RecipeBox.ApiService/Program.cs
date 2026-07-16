@@ -48,6 +48,8 @@ if (app.Environment.IsDevelopment())
     if (db.Database.IsNpgsql())
     {
         await db.Database.MigrateAsync();
+        // Give a fresh database a handful of recipes so the list renders on first run. No-op once any exist.
+        await RecipeSeeder.SeedAsync(db);
     }
 }
 
